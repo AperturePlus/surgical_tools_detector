@@ -1,3 +1,11 @@
-.vscode
-build
-deps/onnxruntime-win-x64-1.24.3/
+/.vscode/
+/build/
+/cmake-build-*/
+
+# Local extracted ONNX Runtime runtime directory (CI downloads it on demand)
+/deps/onnxruntime-win-x64-1.24.3/
+
+# Common local/generated files
+/CMakeUserPresets.json
+/SGTDetector-*-windows-x64/
+/SGTDetector-*-windows-x64.zip
