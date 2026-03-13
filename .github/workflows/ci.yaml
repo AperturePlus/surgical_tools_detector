@@ -35,6 +35,7 @@ jobs:
         with:
           msystem: MINGW64
           update: true
+          install: unzip
           pacboy: >-
             cmake:p
             ninja:p
