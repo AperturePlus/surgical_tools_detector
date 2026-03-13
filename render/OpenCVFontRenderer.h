@@ -27,6 +27,10 @@ public:
 
 private:
     int fontFace_;
+#ifdef _WIN32
+    std::string fontName_ = "Microsoft YaHei";
+    int basePixelHeight_ = 20;
+#endif
 };
 
 } // namespace sgt
