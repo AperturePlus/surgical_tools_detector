@@ -35,10 +35,12 @@ jobs:
         with:
           msystem: MINGW64
           update: true
+          install: unzip
           pacboy: >-
             cmake:p
             ninja:p
             opencv:p
+            qt6-base:p
             gcc:p
             tools-git:p
 
