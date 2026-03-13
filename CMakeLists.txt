@@ -155,7 +155,7 @@ endforeach()
 # Copy MinGW runtime + Qt6 DLLs
 # OpenCV 4.13 HighGUI is compiled against Qt6; these DLLs must ship with the exe.
 # ─────────────────────────────────────────────────────────────────────────────
-set(MINGW_BIN "C:/msys64/mingw64/bin")
+get_filename_component(MINGW_BIN "${CMAKE_CXX_COMPILER}" DIRECTORY)
 
 # MinGW C++ runtime
 foreach(_dll libgcc_s_seh-1.dll libstdc++-6.dll libwinpthread-1.dll)
@@ -176,7 +176,8 @@ foreach(_dll Qt6Core.dll Qt6Gui.dll Qt6Widgets.dll Qt6Test.dll Qt6OpenGLWidgets.
 endforeach()
 
 # Qt6 Windows platform plugin (needed for any GUI window)
-set(QT6_PLATFORMS "C:/msys64/mingw64/share/qt6/plugins/platforms")
+get_filename_component(_MINGW_PREFIX "${MINGW_BIN}" DIRECTORY)
+set(QT6_PLATFORMS "${_MINGW_PREFIX}/share/qt6/plugins/platforms")
 add_custom_command(TARGET SGTDetector POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory
         "$<TARGET_FILE_DIR:SGTDetector>/platforms"
