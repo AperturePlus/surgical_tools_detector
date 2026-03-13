@@ -182,6 +182,20 @@ else()
 endif()
 ]=])
 
+# Common MinGW runtime DLLs required by OpenCV and ONNX Runtime at runtime.
+# zlib1 is used by many OpenCV codecs; openblas/tbb12 are used by OpenCV's
+# optimised linear-algebra and parallel-processing backends; libjpeg-8 is the
+# JPEG codec linked into libopencv_imgcodecs.  All four must ship with the exe
+# on machines that do not have MSYS2/MinGW installed.
+foreach(_dll zlib1.dll libopenblas.dll libtbb12.dll libjpeg-8.dll)
+    add_custom_command(TARGET SGTDetector POST_BUILD
+        COMMAND ${CMAKE_COMMAND}
+            "-DSRC=${MINGW_BIN}/${_dll}"
+            "-DDST=$<TARGET_FILE_DIR:SGTDetector>/${_dll}"
+            -P "${CMAKE_BINARY_DIR}/copy_if_exists.cmake"
+        COMMENT "Copying ${_dll} (if available)...")
+endforeach()
+
 # Qt6 DLLs pulled in by libopencv_highgui (optional — may be absent on some CI images)
 foreach(_dll Qt6Core.dll Qt6Gui.dll Qt6Widgets.dll Qt6Test.dll Qt6OpenGLWidgets.dll)
     add_custom_command(TARGET SGTDetector POST_BUILD
