@@ -40,6 +40,7 @@ jobs:
             cmake:p
             ninja:p
             opencv:p
+            qt6-base:p
             gcc:p
             tools-git:p
 

@@ -166,13 +166,30 @@ foreach(_dll libgcc_s_seh-1.dll libstdc++-6.dll libwinpthread-1.dll)
         COMMENT "Copying ${_dll}...")
 endforeach()
 
-# Qt6 DLLs pulled in by libopencv_highgui
+# Helper script: copy a file only when it exists (avoids build failures when
+# optional Qt6 DLLs are absent, e.g. on CI images without Qt6 installed).
+file(WRITE "${CMAKE_BINARY_DIR}/copy_if_exists.cmake" [=[
+if(EXISTS "${SRC}")
+    execute_process(
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${SRC}" "${DST}"
+        RESULT_VARIABLE _rc
+    )
+    if(_rc)
+        message(WARNING "Failed to copy ${SRC} -> ${DST} (exit code ${_rc})")
+    endif()
+else()
+    message(STATUS "Optional file not found, skipping: ${SRC}")
+endif()
+]=])
+
+# Qt6 DLLs pulled in by libopencv_highgui (optional — may be absent on some CI images)
 foreach(_dll Qt6Core.dll Qt6Gui.dll Qt6Widgets.dll Qt6Test.dll Qt6OpenGLWidgets.dll)
     add_custom_command(TARGET SGTDetector POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${MINGW_BIN}/${_dll}"
-            "$<TARGET_FILE_DIR:SGTDetector>/${_dll}"
-        COMMENT "Copying ${_dll}...")
+        COMMAND ${CMAKE_COMMAND}
+            "-DSRC=${MINGW_BIN}/${_dll}"
+            "-DDST=$<TARGET_FILE_DIR:SGTDetector>/${_dll}"
+            -P "${CMAKE_BINARY_DIR}/copy_if_exists.cmake"
+        COMMENT "Copying ${_dll} (if available)...")
 endforeach()
 
 # Qt6 Windows platform plugin (needed for any GUI window)
@@ -181,7 +198,8 @@ set(QT6_PLATFORMS "${_MINGW_PREFIX}/share/qt6/plugins/platforms")
 add_custom_command(TARGET SGTDetector POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory
         "$<TARGET_FILE_DIR:SGTDetector>/platforms"
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${QT6_PLATFORMS}/qwindows.dll"
-        "$<TARGET_FILE_DIR:SGTDetector>/platforms/qwindows.dll"
-    COMMENT "Copying Qt6 platform plugin...")
+    COMMAND ${CMAKE_COMMAND}
+        "-DSRC=${QT6_PLATFORMS}/qwindows.dll"
+        "-DDST=$<TARGET_FILE_DIR:SGTDetector>/platforms/qwindows.dll"
+        -P "${CMAKE_BINARY_DIR}/copy_if_exists.cmake"
+    COMMENT "Copying Qt6 platform plugin (if available)...")
