@@ -78,6 +78,23 @@ jobs:
           Copy-Item build\SGTDetector.exe        $out\
           Get-ChildItem build\*.dll -ErrorAction SilentlyContinue |
               Copy-Item -Destination $out\
+          # Include OpenCV runtime DLLs from the active MinGW toolchain so
+          # the packaged exe can run without requiring users to preinstall OpenCV.
+          $cache = Get-Content build\CMakeCache.txt
+          $compilerLine = $cache | Where-Object { $_ -like 'CMAKE_CXX_COMPILER:FILEPATH=*' } | Select-Object -First 1
+          if (-not $compilerLine) {
+              throw "CMAKE_CXX_COMPILER not found in build/CMakeCache.txt; cannot locate OpenCV runtime DLLs."
+          }
+          $compiler = ($compilerLine -split '=', 2)[1]
+          $mingwBin = Split-Path $compiler -Parent
+          $opencvDlls = @(
+              Get-ChildItem "$mingwBin\libopencv*.dll" -ErrorAction SilentlyContinue
+              Get-ChildItem "$mingwBin\opencv*.dll" -ErrorAction SilentlyContinue
+          ) | Sort-Object FullName -Unique
+          if (-not $opencvDlls) {
+              throw "No OpenCV DLLs found in $mingwBin; ensure OpenCV is installed in the active MinGW toolchain."
+          }
+          $opencvDlls | Copy-Item -Destination $out\
           Copy-Item build\best.onnx              $out\
           Copy-Item build\labels.dict            $out\
           if (Test-Path build\platforms) {
