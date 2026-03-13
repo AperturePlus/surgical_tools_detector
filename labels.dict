@@ -1,0 +1,54 @@
+# SGTDetector 类别标签字典 / Class label dictionary
+# ══════════════════════════════════════════════════════════════════════════════
+# 格式 / Format:
+#   拼音键=显示名称
+#   pinyin_key=display_label
+#
+# 规则 / Rules:
+#   - 以 # 开头的行为注释 / Lines starting with # are comments
+#   - 值留空则程序显示拼音原名 / Empty value → program shows raw pinyin
+#   - 文件缺失不影响运行，仅显示拼音 / Missing file → graceful fallback
+#
+# 示例 / Examples:
+#   cefangkaikouqi=侧方开口器
+#   guqian=固前 (Anterior Fixed Bridge)
+# ══════════════════════════════════════════════════════════════════════════════
+
+cefangkaikouqi=
+guqian=
+gujian=
+gudao=
+xianjian=
+yating=
+bayaqian=
+guchui=
+shaozi=
+7haodaobing=
+3haodaobing=
+dagumo=
+gucuo=
+zhenchi=
+zhizhixueqian=
+wanzhixueqian=
+paqian=
+kekeqian=
+xiaoduqian=
+xichiqian=
+zuzhinie=
+dangou=
+pingnie=
+zuzhijian=
+zhijiaoqian=
+jiazhuangxianlagou=
+huanqian=
+xiaogumo=
+sichilagou=
+guachi=
+gangsijian=
+xiaolagou=
+eliekaikouqi=
+yasheban=
+eliejian=
+xueguanshenjingboliqi1=
+xueguanshenjingboliqi2=
+yingeboliqi=
