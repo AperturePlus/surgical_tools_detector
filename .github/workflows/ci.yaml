@@ -50,7 +50,11 @@ jobs:
           curl -fsSL -o "${ORT_ZIP}" \
             "https://github.com/microsoft/onnxruntime/releases/download/v${ORT_VERSION}/${ORT_ZIP}"
           mkdir -p deps
-          unzip -q "${ORT_ZIP}" -d deps/
+          if command -v unzip >/dev/null 2>&1; then
+            unzip -q "${ORT_ZIP}" -d deps/
+          else
+            tar -xf "${ORT_ZIP}" -C deps/
+          fi
           cd "deps/onnxruntime-win-x64-${ORT_VERSION}/lib"
           gendef onnxruntime.dll
           dlltool -d onnxruntime.def -D onnxruntime.dll -l libonnxruntime.a
