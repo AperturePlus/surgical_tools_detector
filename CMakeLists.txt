@@ -137,7 +137,7 @@ target_compile_options(SGTDetector PRIVATE
 foreach(_asset best.onnx labels.dict)
     add_custom_command(TARGET SGTDetector POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${CMAKE_SOURCE_DIR}/${_asset}"
+            "${CMAKE_SOURCE_DIR}/assets/${_asset}"
             "$<TARGET_FILE_DIR:SGTDetector>/${_asset}"
         COMMENT "Copying ${_asset}...")
 endforeach()
