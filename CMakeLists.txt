@@ -152,23 +152,88 @@ foreach(_dll onnxruntime.dll onnxruntime_providers_shared.dll)
 endforeach()
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Copy MinGW runtime + Qt6 DLLs
-# OpenCV 4.13 HighGUI is compiled against Qt6; these DLLs must ship with the exe.
+# DLL deployment on Windows (MinGW / MSYS2 builds)
+#
+# Strategy: after each build, use ldd to discover EVERY DLL the executable
+# needs and copy all non-system DLLs to the output directory.  This replaces
+# the old hard-coded DLL list and automatically picks up new dependencies
+# without requiring manual CMakeLists.txt edits.
+#
+# Qt6 plugins (platform plugin, image formats, styles, …) are loaded at
+# runtime and are therefore invisible to ldd.  They are deployed with
+# windeployqt6 when available; otherwise qwindows.dll is copied manually.
 # ─────────────────────────────────────────────────────────────────────────────
 get_filename_component(MINGW_BIN "${CMAKE_CXX_COMPILER}" DIRECTORY)
 
-# MinGW C++ runtime
-foreach(_dll libgcc_s_seh-1.dll libstdc++-6.dll libwinpthread-1.dll)
-    add_custom_command(TARGET SGTDetector POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${MINGW_BIN}/${_dll}"
-            "$<TARGET_FILE_DIR:SGTDetector>/${_dll}"
-        COMMENT "Copying ${_dll}...")
-endforeach()
+# --- ldd-based auto-deploy script -------------------------------------------
+# Written to the build tree at configure time; invoked as a POST_BUILD step.
+file(WRITE "${CMAKE_BINARY_DIR}/deploy_runtime_dlls.sh" [=[
+#!/usr/bin/env bash
+# Copies every non-system DLL that <exe> depends on into <out_dir>.
+# Usage: bash deploy_runtime_dlls.sh <exe> <out_dir>
+set -euo pipefail
 
-# Helper script: copy a file only when it exists (avoids build failures when
-# optional Qt6 DLLs are absent, e.g. on CI images without Qt6 installed).
-file(WRITE "${CMAKE_BINARY_DIR}/copy_if_exists.cmake" [=[
+EXE="$1"
+OUT="$2"
+
+if ! command -v ldd >/dev/null 2>&1; then
+    echo "WARNING: ldd not found; skipping auto DLL deployment." >&2
+    exit 0
+fi
+
+ldd "$EXE" | while IFS= read -r line; do
+    # ldd output (MSYS2): "  libfoo.dll => /path/to/libfoo.dll (0xADDR)"
+    # Capture the resolved path after "=>" — always a Unix-style absolute path
+    # in MSYS2 (e.g. /c/Windows/System32/… or /mingw64/bin/…).
+    if [[ "$line" =~ '=>'[[:space:]]+(/[^[:space:]]+\.[Dd][Ll][Ll]) ]]; then
+        src="${BASH_REMATCH[1]}"
+        [[ -f "$src" ]] || continue
+        # Skip Windows system DLLs (/c/Windows, /C/Windows, /c/windows, etc.)
+        lower="$(echo "$src" | tr '[:upper:]' '[:lower:]')"
+        [[ "$lower" == */windows/* ]] && continue
+        [[ "$lower" == */system32/* ]] && continue
+        name="$(basename "$src")"
+        if cp -f "$src" "$OUT/$name" 2>/dev/null; then
+            echo "Deployed: $name"
+        else
+            echo "WARNING: failed to copy $src" >&2
+        fi
+    fi
+done
+]=])
+
+add_custom_command(TARGET SGTDetector POST_BUILD
+    COMMAND bash "${CMAKE_BINARY_DIR}/deploy_runtime_dlls.sh"
+        "$<TARGET_FILE:SGTDetector>"
+        "$<TARGET_FILE_DIR:SGTDetector>"
+    COMMENT "Auto-deploying runtime DLLs via ldd...")
+
+# --- Qt6 plugins (runtime-loaded; invisible to ldd) -------------------------
+# windeployqt6 is the canonical tool for this; fall back to copying qwindows.dll
+# manually when it is not available.
+find_program(WINDEPLOYQT6_EXECUTABLE
+    NAMES windeployqt6 windeployqt6.exe
+    HINTS "${MINGW_BIN}"
+    NO_DEFAULT_PATH
+)
+if(NOT WINDEPLOYQT6_EXECUTABLE)
+    find_program(WINDEPLOYQT6_EXECUTABLE NAMES windeployqt6 windeployqt6.exe)
+endif()
+
+if(WINDEPLOYQT6_EXECUTABLE)
+    message(STATUS "windeployqt6 found: ${WINDEPLOYQT6_EXECUTABLE}")
+    add_custom_command(TARGET SGTDetector POST_BUILD
+        COMMAND "${WINDEPLOYQT6_EXECUTABLE}"
+            --no-translations
+            --no-compiler-runtime
+            $<$<CONFIG:Debug>:--debug>
+            $<$<CONFIG:Release>:--release>
+            "$<TARGET_FILE:SGTDetector>"
+        COMMENT "Deploying Qt6 plugins via windeployqt6...")
+else()
+    message(STATUS "windeployqt6 not found; falling back to manual Qt6 platform plugin copy")
+    # Helper: copy a file only when the source path exists.
+    file(WRITE "${CMAKE_BINARY_DIR}/copy_if_exists.cmake" [=[
 if(EXISTS "${SRC}")
     execute_process(
         COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${SRC}" "${DST}"
@@ -181,39 +246,14 @@ else()
     message(STATUS "Optional file not found, skipping: ${SRC}")
 endif()
 ]=])
-
-# Common MinGW runtime DLLs required by OpenCV and ONNX Runtime at runtime.
-# zlib1 is used by many OpenCV codecs; openblas/tbb12 are used by OpenCV's
-# optimised linear-algebra and parallel-processing backends; libjpeg-8 is the
-# JPEG codec linked into libopencv_imgcodecs.  All four must ship with the exe
-# on machines that do not have MSYS2/MinGW installed.
-foreach(_dll zlib1.dll libopenblas.dll libtbb12.dll libjpeg-8.dll)
+    get_filename_component(_MINGW_PREFIX "${MINGW_BIN}" DIRECTORY)
+    set(QT6_PLATFORMS "${_MINGW_PREFIX}/share/qt6/plugins/platforms")
     add_custom_command(TARGET SGTDetector POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory
+            "$<TARGET_FILE_DIR:SGTDetector>/platforms"
         COMMAND ${CMAKE_COMMAND}
-            "-DSRC=${MINGW_BIN}/${_dll}"
-            "-DDST=$<TARGET_FILE_DIR:SGTDetector>/${_dll}"
+            "-DSRC=${QT6_PLATFORMS}/qwindows.dll"
+            "-DDST=$<TARGET_FILE_DIR:SGTDetector>/platforms/qwindows.dll"
             -P "${CMAKE_BINARY_DIR}/copy_if_exists.cmake"
-        COMMENT "Copying ${_dll} (if available)...")
-endforeach()
-
-# Qt6 DLLs pulled in by libopencv_highgui (optional — may be absent on some CI images)
-foreach(_dll Qt6Core.dll Qt6Gui.dll Qt6Widgets.dll Qt6Test.dll Qt6OpenGLWidgets.dll)
-    add_custom_command(TARGET SGTDetector POST_BUILD
-        COMMAND ${CMAKE_COMMAND}
-            "-DSRC=${MINGW_BIN}/${_dll}"
-            "-DDST=$<TARGET_FILE_DIR:SGTDetector>/${_dll}"
-            -P "${CMAKE_BINARY_DIR}/copy_if_exists.cmake"
-        COMMENT "Copying ${_dll} (if available)...")
-endforeach()
-
-# Qt6 Windows platform plugin (needed for any GUI window)
-get_filename_component(_MINGW_PREFIX "${MINGW_BIN}" DIRECTORY)
-set(QT6_PLATFORMS "${_MINGW_PREFIX}/share/qt6/plugins/platforms")
-add_custom_command(TARGET SGTDetector POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E make_directory
-        "$<TARGET_FILE_DIR:SGTDetector>/platforms"
-    COMMAND ${CMAKE_COMMAND}
-        "-DSRC=${QT6_PLATFORMS}/qwindows.dll"
-        "-DDST=$<TARGET_FILE_DIR:SGTDetector>/platforms/qwindows.dll"
-        -P "${CMAKE_BINARY_DIR}/copy_if_exists.cmake"
-    COMMENT "Copying Qt6 platform plugin (if available)...")
+        COMMENT "Copying Qt6 platform plugin (if available)...")
+endif()
