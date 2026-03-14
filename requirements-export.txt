@@ -1,0 +1,11 @@
+# Python dependencies for scripts/export_model.py
+#
+# Install with:
+#   pip install -r requirements-export.txt
+#
+# These are only needed to convert v8s.pt → best.onnx (or best_fp16.onnx).
+# They are NOT required to run the compiled SGTDetector binary.
+
+ultralytics>=8.3.0
+onnx>=1.16.0
+onnxsim>=0.4.36

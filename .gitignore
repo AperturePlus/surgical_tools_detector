@@ -3,10 +3,16 @@
 
 # Local extracted ONNX Runtime runtime directory (CI downloads it on demand)
 /deps/onnxruntime-win-x64-1.24.3/
+/deps/onnxruntime-win-x64-gpu-*/
+/deps/onnxruntime-win-x64-directml-*/
+
+# Generated ONNX model files (produced by scripts/export_model.py from v8s.pt)
+/assets/best.onnx
+/assets/best_fp16.onnx
 
 # Common local/generated files
 /CMakeUserPresets.json
-/SGTDetector-*-windows-x64/
-/SGTDetector-*-windows-x64.zip
+/SGTDetector-*-windows-x64*/
+/SGTDetector-*-windows-x64*.zip
 
 build*/
