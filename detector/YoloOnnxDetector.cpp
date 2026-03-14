@@ -287,7 +287,7 @@ YoloOnnxDetector::postprocess(const float*    data,
         }
         if (maxScore < confThresh_) continue;
 
-        // cx, cy, w, h in letterboxed 960×960 coordinate space
+        // cx, cy, w, h in letterboxed 640×640 coordinate space
         float cx = data[0 * anchors + a];
         float cy = data[1 * anchors + a];
         float bw = data[2 * anchors + a];

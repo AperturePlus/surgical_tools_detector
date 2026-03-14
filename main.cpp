@@ -129,7 +129,7 @@ int main(int argc, char* argv[])
 
         detector = std::make_unique<sgt::YoloOnnxDetector>(
             modelPath,
-            /*inputSize*/  960,
+            /*inputSize*/  640,
             /*confThresh*/ 0.25f,
             /*nmsThresh*/  0.45f,
             labels.get());

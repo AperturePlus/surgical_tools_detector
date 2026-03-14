@@ -10,7 +10,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 #   cmake -B build -G Ninja -DWITH_CUDA=ON          (CUDA EP for GPU inference)
 #     expects deps/onnxruntime-win-x64-gpu-<version> by default
 #   cmake -B build -G Ninja -DWITH_DIRECTML=ON      (DirectML EP for AMD/Intel/NVIDIA on Windows)
-#     expects deps/onnxruntime-win-x64-directml-<version> by default
+#     expects deps/onnxruntime-win-x64-<version> by default
 #   cmake -B build -G Ninja -DWITH_FREETYPE=ON      (FreeType for CJK text)
 #   cmake -B build -G Ninja -DWITH_IMGUI=ON         (Dear ImGui renderer)
 #
@@ -55,7 +55,7 @@ if(NOT DEFINED ORT_ROOT)
     if(WITH_CUDA)
         set(_ort_default_root "${CMAKE_SOURCE_DIR}/deps/onnxruntime-win-x64-gpu-${ORT_VERSION}")
     elseif(WITH_DIRECTML)
-        set(_ort_default_root "${CMAKE_SOURCE_DIR}/deps/onnxruntime-win-x64-directml-${ORT_VERSION}")
+        set(_ort_default_root "${CMAKE_SOURCE_DIR}/deps/onnxruntime-win-x64-${ORT_VERSION}")
     else()
         set(_ort_default_root "${CMAKE_SOURCE_DIR}/deps/onnxruntime-win-x64-${ORT_VERSION}")
     endif()
@@ -85,12 +85,6 @@ if(WITH_CUDA AND NOT EXISTS "${ORT_LIB_DIR}/onnxruntime_providers_cuda.dll")
 endif()
 if(WITH_DIRECTML AND NOT WIN32)
     message(FATAL_ERROR "WITH_DIRECTML is currently supported only on Windows.")
-endif()
-if(WITH_DIRECTML AND NOT EXISTS "${ORT_LIB_DIR}/onnxruntime_providers_dml.dll")
-    message(FATAL_ERROR
-        "WITH_DIRECTML=ON but DirectML provider DLL is missing:\n"
-        "  ${ORT_LIB_DIR}/onnxruntime_providers_dml.dll\n"
-        "Use the DirectML package (onnxruntime-win-x64-directml-${ORT_VERSION}) or set -DORT_ROOT=... accordingly.")
 endif()
 
 message(STATUS "ONNX Runtime ${ORT_VERSION}: ${ORT_ROOT}")

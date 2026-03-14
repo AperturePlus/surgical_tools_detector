@@ -22,12 +22,12 @@ namespace sgt {
 class YoloOnnxDetector : public DetectorBackend {
 public:
     /// @param modelPath   Path to the .onnx file.
-    /// @param inputSize   Square input size used at training time (e.g. 960).
+    /// @param inputSize   Square input size used at training time (e.g. 640).
     /// @param confThresh  Minimum confidence to keep a detection [0, 1].
     /// @param nmsThresh   NMS IoU threshold [0, 1].
     /// @param labels      Optional LabelProvider for class name resolution.
     YoloOnnxDetector(const std::string&   modelPath,
-                     int                  inputSize  = 960,
+                     int                  inputSize  = 640,
                      float                confThresh = 0.25f,
                      float                nmsThresh  = 0.45f,
                      const LabelProvider* labels     = nullptr);
