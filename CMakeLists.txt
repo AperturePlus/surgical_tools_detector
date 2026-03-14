@@ -8,11 +8,15 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Optional features — enable at configure time:
 #   cmake -B build -G Ninja                         (CPU only, OpenCV HighGUI)
 #   cmake -B build -G Ninja -DWITH_CUDA=ON          (CUDA EP for GPU inference)
+#     expects deps/onnxruntime-win-x64-gpu-<version> by default
+#   cmake -B build -G Ninja -DWITH_DIRECTML=ON      (DirectML EP for AMD/Intel/NVIDIA on Windows)
+#     expects deps/onnxruntime-win-x64-directml-<version> by default
 #   cmake -B build -G Ninja -DWITH_FREETYPE=ON      (FreeType for CJK text)
 #   cmake -B build -G Ninja -DWITH_IMGUI=ON         (Dear ImGui renderer)
 # ─────────────────────────────────────────────────────────────────────────────
 option(WITH_FREETYPE "Enable FreeType font renderer for CJK/Unicode text" OFF)
 option(WITH_CUDA     "Enable CUDA Execution Provider for ONNX Runtime"    OFF)
+option(WITH_DIRECTML "Enable DirectML Execution Provider for ONNX Runtime" OFF)
 option(WITH_IMGUI    "Enable Dear ImGui renderer"                          OFF)
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -30,14 +34,25 @@ message(STATUS "OpenCV ${OpenCV_VERSION} found: ${OpenCV_DIR}")
 #   gendef.exe onnxruntime.dll
 #   dlltool.exe -d onnxruntime.def -D onnxruntime.dll -l libonnxruntime.a
 # ─────────────────────────────────────────────────────────────────────────────
-set(ORT_ROOT "${CMAKE_SOURCE_DIR}/deps/onnxruntime-win-x64-1.24.3")
+set(ORT_VERSION "1.24.3")
+if(NOT DEFINED ORT_ROOT)
+    if(WITH_CUDA)
+        set(_ort_default_root "${CMAKE_SOURCE_DIR}/deps/onnxruntime-win-x64-gpu-${ORT_VERSION}")
+    elseif(WITH_DIRECTML)
+        set(_ort_default_root "${CMAKE_SOURCE_DIR}/deps/onnxruntime-win-x64-directml-${ORT_VERSION}")
+    else()
+        set(_ort_default_root "${CMAKE_SOURCE_DIR}/deps/onnxruntime-win-x64-${ORT_VERSION}")
+    endif()
+    set(ORT_ROOT "${_ort_default_root}" CACHE PATH "Path to ONNX Runtime distribution root")
+endif()
+
 set(ORT_INCLUDE_DIR "${ORT_ROOT}/include")
 set(ORT_LIB_DIR     "${ORT_ROOT}/lib")
 
 if(NOT EXISTS "${ORT_INCLUDE_DIR}/onnxruntime_cxx_api.h")
     message(FATAL_ERROR
         "ONNX Runtime headers not found at ${ORT_INCLUDE_DIR}\n"
-        "Check that deps/onnxruntime-win-x64-1.24.3 is present.")
+        "Check ORT_ROOT=${ORT_ROOT}.")
 endif()
 if(NOT EXISTS "${ORT_LIB_DIR}/libonnxruntime.a")
     message(FATAL_ERROR
@@ -46,8 +61,23 @@ if(NOT EXISTS "${ORT_LIB_DIR}/libonnxruntime.a")
         "  gendef.exe ${ORT_LIB_DIR}/onnxruntime.dll\n"
         "  dlltool.exe -d onnxruntime.def -D onnxruntime.dll -l ${ORT_LIB_DIR}/libonnxruntime.a")
 endif()
+if(WITH_CUDA AND NOT EXISTS "${ORT_LIB_DIR}/onnxruntime_providers_cuda.dll")
+    message(FATAL_ERROR
+        "WITH_CUDA=ON but CUDA provider DLL is missing:\n"
+        "  ${ORT_LIB_DIR}/onnxruntime_providers_cuda.dll\n"
+        "Use the GPU package (onnxruntime-win-x64-gpu-${ORT_VERSION}) or set -DORT_ROOT=... to a GPU-enabled ORT.")
+endif()
+if(WITH_DIRECTML AND NOT WIN32)
+    message(FATAL_ERROR "WITH_DIRECTML is currently supported only on Windows.")
+endif()
+if(WITH_DIRECTML AND NOT EXISTS "${ORT_LIB_DIR}/onnxruntime_providers_dml.dll")
+    message(FATAL_ERROR
+        "WITH_DIRECTML=ON but DirectML provider DLL is missing:\n"
+        "  ${ORT_LIB_DIR}/onnxruntime_providers_dml.dll\n"
+        "Use the DirectML package (onnxruntime-win-x64-directml-${ORT_VERSION}) or set -DORT_ROOT=... accordingly.")
+endif()
 
-message(STATUS "ONNX Runtime 1.24.3 (bundled): ${ORT_LIB_DIR}")
+message(STATUS "ONNX Runtime ${ORT_VERSION}: ${ORT_ROOT}")
 add_library(onnxruntime STATIC IMPORTED)
 set_target_properties(onnxruntime PROPERTIES
     IMPORTED_LOCATION             "${ORT_LIB_DIR}/libonnxruntime.a"
@@ -110,6 +140,10 @@ if(WITH_CUDA)
     target_compile_definitions(SGTDetector PRIVATE SGT_WITH_CUDA)
     message(STATUS "CUDA EP support enabled (runtime GPU selection)")
 endif()
+if(WITH_DIRECTML)
+    target_compile_definitions(SGTDetector PRIVATE SGT_WITH_DIRECTML)
+    message(STATUS "DirectML EP support enabled (runtime GPU selection)")
+endif()
 if(WITH_FREETYPE)
     target_compile_definitions(SGTDetector PRIVATE SGT_WITH_FREETYPE)
     target_link_libraries(SGTDetector PRIVATE Freetype::Freetype)
@@ -142,13 +176,26 @@ foreach(_asset best.onnx labels.dict)
         COMMENT "Copying ${_asset}...")
 endforeach()
 
-# Copy ONNX Runtime DLLs (required at runtime on Windows)
-foreach(_dll onnxruntime.dll onnxruntime_providers_shared.dll)
+# Copy ONNX Runtime core DLL (required at runtime on Windows)
+add_custom_command(TARGET SGTDetector POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${ORT_LIB_DIR}/onnxruntime.dll"
+        "$<TARGET_FILE_DIR:SGTDetector>/onnxruntime.dll"
+    COMMENT "Copying onnxruntime.dll...")
+
+# Copy every provider DLL from the selected ORT package (CPU/CUDA/TensorRT...).
+# Provider DLLs are loaded dynamically, so they may not appear in ldd output.
+file(GLOB ORT_PROVIDER_DLLS "${ORT_LIB_DIR}/onnxruntime_providers_*.dll")
+if(NOT ORT_PROVIDER_DLLS)
+    message(WARNING "No ONNX Runtime provider DLLs found under ${ORT_LIB_DIR}.")
+endif()
+foreach(_provider_dll IN LISTS ORT_PROVIDER_DLLS)
+    get_filename_component(_provider_name "${_provider_dll}" NAME)
     add_custom_command(TARGET SGTDetector POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${ORT_LIB_DIR}/${_dll}"
-            "$<TARGET_FILE_DIR:SGTDetector>/${_dll}"
-        COMMENT "Copying ${_dll}...")
+            "${_provider_dll}"
+            "$<TARGET_FILE_DIR:SGTDetector>/${_provider_name}"
+        COMMENT "Copying ${_provider_name}...")
 endforeach()
 
 # ─────────────────────────────────────────────────────────────────────────────

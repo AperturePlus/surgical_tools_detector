@@ -15,8 +15,12 @@ jobs:
   # On a tag push, also package the binary and upload it as a workflow artifact.
   # ─────────────────────────────────────────────────────────────────────────────
   build:
-    name: Build (Windows / MinGW-w64)
+    name: Build (Windows / MinGW-w64 / ${{ matrix.backend }})
     runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        backend: [cpu, cuda, directml]
 
     permissions:
       contents: read    # checkout only; no write access needed
@@ -48,7 +52,23 @@ jobs:
       # import library (libonnxruntime.a) that CMakeLists.txt expects.
       - name: Download and prepare ONNX Runtime
         run: |
-          ORT_ZIP="onnxruntime-win-x64-${ORT_VERSION}.zip"
+          case "${{ matrix.backend }}" in
+            cuda)
+              ORT_DIR="onnxruntime-win-x64-gpu-${ORT_VERSION}"
+              ORT_ZIP="${ORT_DIR}.zip"
+              CMAKE_EP_FLAGS="-DWITH_CUDA=ON -DWITH_DIRECTML=OFF"
+              ;;
+            directml)
+              ORT_DIR="onnxruntime-win-x64-directml-${ORT_VERSION}"
+              ORT_ZIP="${ORT_DIR}.zip"
+              CMAKE_EP_FLAGS="-DWITH_CUDA=OFF -DWITH_DIRECTML=ON"
+              ;;
+            *)
+              ORT_DIR="onnxruntime-win-x64-${ORT_VERSION}"
+              ORT_ZIP="${ORT_DIR}.zip"
+              CMAKE_EP_FLAGS="-DWITH_CUDA=OFF -DWITH_DIRECTML=OFF"
+              ;;
+          esac
           curl -fsSL -o "${ORT_ZIP}" \
             "https://github.com/microsoft/onnxruntime/releases/download/v${ORT_VERSION}/${ORT_ZIP}"
           mkdir -p deps
@@ -57,19 +77,20 @@ jobs:
           else
             tar -xf "${ORT_ZIP}" -C deps/
           fi
-          cd "deps/onnxruntime-win-x64-${ORT_VERSION}/lib"
+          cd "deps/${ORT_DIR}/lib"
           gendef onnxruntime.dll
           dlltool -d onnxruntime.def -D onnxruntime.dll -l libonnxruntime.a
+          echo "CMAKE_EP_FLAGS=${CMAKE_EP_FLAGS}" >> "$GITHUB_ENV"
 
       - name: Configure
-        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release ${CMAKE_EP_FLAGS}
 
       - name: Build
         run: cmake --build build
 
       # ── Packaging (tag pushes only) ──────────────────────────────────────────
       - name: Package release artifact
-        if: startsWith(github.ref, 'refs/tags/')
+        if: startsWith(github.ref, 'refs/tags/') && matrix.backend == 'cpu'
         shell: pwsh
         run: |
           $tag = "${{ github.ref_name }}"
@@ -94,7 +115,7 @@ jobs:
           Compress-Archive -Path $out -DestinationPath "$out.zip"
 
       - name: Upload release artifact
-        if: startsWith(github.ref, 'refs/tags/')
+        if: startsWith(github.ref, 'refs/tags/') && matrix.backend == 'cpu'
         uses: actions/upload-artifact@v4
         with:
           name: windows-x64

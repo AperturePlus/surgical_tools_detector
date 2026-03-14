@@ -1,14 +1,82 @@
 #include "detector/YoloOnnxDetector.h"
 
 #include <algorithm>
+#include <cctype>
 #include <iostream>
 #include <filesystem>
 #include <thread>
+#include <sstream>
+#include <unordered_map>
 
 #include <opencv2/imgproc.hpp>
 #include <opencv2/dnn.hpp>
 
 namespace sgt {
+
+namespace {
+
+bool equalsIgnoreCase(const std::string& a, const std::string& b)
+{
+    if (a.size() != b.size()) return false;
+    for (size_t i = 0; i < a.size(); ++i) {
+        if (std::tolower(static_cast<unsigned char>(a[i])) !=
+            std::tolower(static_cast<unsigned char>(b[i]))) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool hasProvider(const std::vector<std::string>& providers,
+                 const std::vector<std::string>& aliases)
+{
+    for (const auto& provider : providers) {
+        for (const auto& alias : aliases) {
+            if (equalsIgnoreCase(provider, alias)) return true;
+        }
+    }
+    return false;
+}
+
+std::string joinProviders(const std::vector<std::string>& providers)
+{
+    if (providers.empty()) return "(none)";
+    std::ostringstream oss;
+    for (size_t i = 0; i < providers.size(); ++i) {
+        if (i) oss << ", ";
+        oss << providers[i];
+    }
+    return oss.str();
+}
+
+std::vector<Ort::ConstEpDevice> selectEpDevices(
+    const std::vector<Ort::ConstEpDevice>& devices,
+    const std::vector<std::string>& aliases)
+{
+    std::vector<Ort::ConstEpDevice> matched;
+    for (const auto& d : devices) {
+        for (const auto& alias : aliases) {
+            if (equalsIgnoreCase(d.EpName(), alias)) {
+                matched.push_back(d);
+                break;
+            }
+        }
+    }
+    return matched;
+}
+
+std::string joinEpDeviceNames(const std::vector<Ort::ConstEpDevice>& devices)
+{
+    if (devices.empty()) return "(none)";
+    std::ostringstream oss;
+    for (size_t i = 0; i < devices.size(); ++i) {
+        if (i) oss << ", ";
+        oss << devices[i].EpName();
+    }
+    return oss.str();
+}
+
+} // namespace
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constructor
@@ -30,28 +98,74 @@ YoloOnnxDetector::YoloOnnxDetector(const std::string&   modelPath,
         std::max(1u, std::thread::hardware_concurrency() / 2));
     sessionOpts_.SetIntraOpNumThreads(threads);
     sessionOpts_.SetGraphOptimizationLevel(ORT_ENABLE_ALL);
+    const auto availableProviders = Ort::GetAvailableProviders();
+    const auto availableEpDevices = env_.GetEpDevices();
+    std::cout << "[SGTDetector] ONNX Runtime available EPs: "
+              << joinProviders(availableProviders) << "\n";
+    std::cout << "[SGTDetector] ONNX Runtime available EP devices: "
+              << joinEpDeviceNames(availableEpDevices) << "\n";
 
-    // ── Execution Provider selection ───────────────────────────────────────
-    // When compiled with WITH_CUDA=ON, try CUDA first; fall back to CPU.
     bool sessionCreated = false;
+    std::string activeEp = "CPU";
+
+    struct EpCandidate {
+        const char* label;
+        std::vector<std::string> aliases;
+    };
+    std::vector<EpCandidate> candidates;
 
 #ifdef SGT_WITH_CUDA
-    {
-        Ort::SessionOptions cudaOpts;
-        cudaOpts.SetIntraOpNumThreads(threads);
-        cudaOpts.SetGraphOptimizationLevel(ORT_ENABLE_ALL);
-        try {
-            OrtCUDAProviderOptions cudaProviderOpts{};
-            cudaOpts.AppendExecutionProvider_CUDA(cudaProviderOpts);
-            auto wpath = std::filesystem::path(modelPath).wstring();
-            session_ = std::make_unique<Ort::Session>(env_, wpath.c_str(), cudaOpts);
-            sessionOpts_ = std::move(cudaOpts);
-            std::cout << "[SGTDetector] CUDA Execution Provider enabled.\n";
-            sessionCreated = true;
-        } catch (const Ort::Exception& e) {
-            std::cerr << "[SGTDetector] CUDA EP unavailable: " << e.what()
-                      << "\n  → Falling back to CPU.\n";
+    candidates.push_back({"CUDA", {"CUDAExecutionProvider", "CUDA"}});
+#endif
+#ifdef SGT_WITH_DIRECTML
+#ifdef _WIN32
+    candidates.push_back({"DirectML", {"DmlExecutionProvider", "DMLExecutionProvider", "DML"}});
+#endif
+#endif
+
+    for (const auto& candidate : candidates) {
+        if (!hasProvider(availableProviders, candidate.aliases)) {
+            continue;
         }
+
+        auto epDevices = selectEpDevices(availableEpDevices, candidate.aliases);
+        if (epDevices.empty()) {
+            std::cerr << "[SGTDetector] " << candidate.label
+                      << " provider reported by ORT but no EP device is available.\n";
+            continue;
+        }
+
+        Ort::SessionOptions epOpts;
+        epOpts.SetIntraOpNumThreads(threads);
+        epOpts.SetGraphOptimizationLevel(ORT_ENABLE_ALL);
+
+        try {
+            epOpts.AppendExecutionProvider_V2(
+                env_,
+                epDevices,
+                std::unordered_map<std::string, std::string>{});
+            auto wpath = std::filesystem::path(modelPath).wstring();
+            session_ = std::make_unique<Ort::Session>(env_, wpath.c_str(), epOpts);
+            sessionOpts_ = std::move(epOpts);
+            activeEp = candidate.label;
+            std::cout << "[SGTDetector] " << candidate.label
+                      << " Execution Provider enabled.\n";
+            sessionCreated = true;
+            break;
+        } catch (const Ort::Exception& e) {
+            std::cerr << "[SGTDetector] " << candidate.label
+                      << " EP init failed: " << e.what() << "\n";
+        }
+    }
+
+#ifndef SGT_WITH_CUDA
+    if (hasProvider(availableProviders, {"CUDAExecutionProvider"})) {
+        std::cerr << "[SGTDetector] CUDA is available in ORT, but this binary was built without WITH_CUDA=ON.\n";
+    }
+#endif
+#ifndef SGT_WITH_DIRECTML
+    if (hasProvider(availableProviders, {"DmlExecutionProvider", "DMLExecutionProvider", "DML"})) {
+        std::cerr << "[SGTDetector] DirectML is available in ORT, but this binary was built without WITH_DIRECTML=ON.\n";
     }
 #endif
 
@@ -63,8 +177,9 @@ YoloOnnxDetector::YoloOnnxDetector(const std::string&   modelPath,
 #else
         session_ = std::make_unique<Ort::Session>(env_, modelPath.c_str(), sessionOpts_);
 #endif
-        std::cout << "[SGTDetector] Using CPU Execution Provider ("
-                  << threads << " threads).\n";
+        std::cout << "[SGTDetector] Using CPU Execution Provider (" << threads << " threads).\n";
+    } else {
+        std::cout << "[SGTDetector] Active EP: " << activeEp << "\n";
     }
 
     // ── Query input / output names ─────────────────────────────────────────
@@ -252,3 +367,4 @@ std::vector<Detection> YoloOnnxDetector::detect(const cv::Mat& frame)
 }
 
 } // namespace sgt
+

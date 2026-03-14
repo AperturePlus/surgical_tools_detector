@@ -15,7 +15,7 @@ namespace sgt {
 /// YOLOv8 object detector backed by ONNX Runtime.
 ///
 /// Execution Provider priority (runtime, no recompile needed):
-///   CUDA (WITH_CUDA=ON)  →  CPU fallback if CUDA unavailable
+///   CUDA (WITH_CUDA=ON)  →  DirectML (WITH_DIRECTML=ON)  →  CPU fallback
 ///
 /// To add TensorRT or OpenVINO support:
 ///   create a new class that derives from DetectorBackend and swap in main.cpp.
