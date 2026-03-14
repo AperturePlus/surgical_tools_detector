@@ -86,12 +86,6 @@ endif()
 if(WITH_DIRECTML AND NOT WIN32)
     message(FATAL_ERROR "WITH_DIRECTML is currently supported only on Windows.")
 endif()
-if(WITH_DIRECTML AND NOT EXISTS "${ORT_LIB_DIR}/onnxruntime_providers_dml.dll")
-    message(FATAL_ERROR
-        "WITH_DIRECTML=ON but DirectML provider DLL is missing:\n"
-        "  ${ORT_LIB_DIR}/onnxruntime_providers_dml.dll\n"
-        "Use the standard package (onnxruntime-win-x64-${ORT_VERSION}) or set -DORT_ROOT=... accordingly.")
-endif()
 
 message(STATUS "ONNX Runtime ${ORT_VERSION}: ${ORT_ROOT}")
 add_library(onnxruntime STATIC IMPORTED)
