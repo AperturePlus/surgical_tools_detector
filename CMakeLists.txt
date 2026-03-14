@@ -13,11 +13,27 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 #     expects deps/onnxruntime-win-x64-directml-<version> by default
 #   cmake -B build -G Ninja -DWITH_FREETYPE=ON      (FreeType for CJK text)
 #   cmake -B build -G Ninja -DWITH_IMGUI=ON         (Dear ImGui renderer)
+#
+# Model asset
+# ───────────
+# The ONNX model (best.onnx) must be generated from assets/v8s.pt before
+# building.  Run the export script for the desired backend first:
+#
+#   python scripts/export_model.py --model assets/v8s.pt --backend cpu
+#   python scripts/export_model.py --model assets/v8s.pt --backend cuda
+#   python scripts/export_model.py --model assets/v8s.pt --backend directml
+#
+# Override the model filename with -DSGT_MODEL_ASSET=<name> if needed.
 # ─────────────────────────────────────────────────────────────────────────────
 option(WITH_FREETYPE "Enable FreeType font renderer for CJK/Unicode text" OFF)
 option(WITH_CUDA     "Enable CUDA Execution Provider for ONNX Runtime"    OFF)
 option(WITH_DIRECTML "Enable DirectML Execution Provider for ONNX Runtime" OFF)
 option(WITH_IMGUI    "Enable Dear ImGui renderer"                          OFF)
+
+# Model asset filename to copy next to the executable (must exist in assets/).
+# The runtime always loads "best.onnx" from the executable directory.
+set(SGT_MODEL_ASSET "best.onnx" CACHE STRING
+    "ONNX model filename in assets/ to bundle with the release")
 
 # ─────────────────────────────────────────────────────────────────────────────
 # OpenCV
@@ -168,13 +184,29 @@ target_compile_options(SGTDetector PRIVATE
 # ─────────────────────────────────────────────────────────────────────────────
 # Copy runtime assets next to the executable after build
 # ─────────────────────────────────────────────────────────────────────────────
-foreach(_asset best.onnx labels.dict)
+# Copy the ONNX model.  SGT_MODEL_ASSET selects which file from assets/ to
+# bundle (default: best.onnx).  It is always installed as "best.onnx" so that
+# the runtime path lookup in main.cpp never needs to change.
+if(NOT "${SGT_MODEL_ASSET}" STREQUAL "best.onnx")
     add_custom_command(TARGET SGTDetector POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${CMAKE_SOURCE_DIR}/assets/${_asset}"
-            "$<TARGET_FILE_DIR:SGTDetector>/${_asset}"
-        COMMENT "Copying ${_asset}...")
-endforeach()
+            "${CMAKE_SOURCE_DIR}/assets/${SGT_MODEL_ASSET}"
+            "$<TARGET_FILE_DIR:SGTDetector>/best.onnx"
+        COMMENT "Copying ${SGT_MODEL_ASSET} -> best.onnx...")
+else()
+    add_custom_command(TARGET SGTDetector POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CMAKE_SOURCE_DIR}/assets/best.onnx"
+            "$<TARGET_FILE_DIR:SGTDetector>/best.onnx"
+        COMMENT "Copying best.onnx...")
+endif()
+message(STATUS "Model asset: ${SGT_MODEL_ASSET} (installed as best.onnx)")
+
+add_custom_command(TARGET SGTDetector POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_SOURCE_DIR}/assets/labels.dict"
+        "$<TARGET_FILE_DIR:SGTDetector>/labels.dict"
+    COMMENT "Copying labels.dict...")
 
 # Copy ONNX Runtime core DLL (required at runtime on Windows)
 add_custom_command(TARGET SGTDetector POST_BUILD
