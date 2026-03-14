@@ -171,8 +171,8 @@ def main() -> None:
     parser.add_argument(
         "--imgsz",
         type=int,
-        default=960,
-        help="Input image size used during export (default: 960)",
+        default=640,
+        help="Input image size used during export (default: 640)",
     )
     parser.add_argument(
         "--opset",
