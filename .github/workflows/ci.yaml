@@ -68,7 +68,7 @@ jobs:
             cmake_ep_flags: "-DWITH_CUDA=ON -DWITH_DIRECTML=OFF"
           # DirectML build: ORT DirectML package, for AMD/Intel/NVIDIA on Windows
           - backend: directml
-            ort_pkg: "onnxruntime-win-x64-directml"
+            ort_pkg: "onnxruntime-win-x64"
             cmake_ep_flags: "-DWITH_CUDA=OFF -DWITH_DIRECTML=ON"
 
     permissions:
