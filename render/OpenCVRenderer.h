@@ -19,6 +19,9 @@ public:
     void drawDetections(cv::Mat&                      frame,
                         const std::vector<Detection>& dets) override;
 
+    void drawDefects(cv::Mat&                         frame,
+                     const std::vector<DefectResult>& defects) override;
+
     void drawHUD(cv::Mat& frame, const HUDData& hud) override;
 
     /// Displays the frame with imshow, calls waitKey(1).

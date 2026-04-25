@@ -1,26 +1,36 @@
-/// SGTDetector — YOLOv8 real-time dental instrument detection
+/// SGTDetector - real-time surgical tool, grasp, and defect detection.
 ///
 /// Usage:
-///   SGTDetector [camera_id]         (default: 0)
-///   SGTDetector [camera_id] [model] (override model path)
+///   SGTDetector [camera_id] [tool_model]
+///   SGTDetector [camera_id] --mode <tool|grasp|defect> [--tool-model <path>] [--grasp-model <path>] [--defect-model <path>]
 ///
 /// Keyboard shortcuts:
-///   +  / =    raise confidence threshold +0.05
-///   -  / _    lower confidence threshold -0.05
+///   1/2/3     switch mode (tool/grasp/defect)
+///   +  / =    raise active threshold +0.05
+///   -  / _    lower active threshold -0.05
+///   mouse     click top-right mode buttons
 ///   s  / S    save screenshot (screenshot_YYYYMMDD_HHMMSS.jpg)
 ///   q  / ESC  quit
 
+#include <algorithm>
+#include <array>
+#include <cctype>
+#include <chrono>
+#include <cstdlib>
+#include <filesystem>
+#include <iomanip>
 #include <iostream>
 #include <memory>
-#include <filesystem>
-#include <chrono>
-#include <iomanip>
 #include <sstream>
-#include <cstdlib>   // std::atoi
+#include <stdexcept>
+#include <string>
+#include <vector>
 
-#include <opencv2/videoio.hpp>
+#include <opencv2/highgui.hpp>
 #include <opencv2/imgcodecs.hpp>
+#include <opencv2/videoio.hpp>
 
+#include "classifier/OnnxDefectClassifier.h"
 #include "core/DetectorBackend.h"
 #include "core/LabelProvider.h"
 #include "core/Renderer.h"
@@ -32,53 +42,266 @@
 
 namespace fs = std::filesystem;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Class names — must match the order in m4.yaml "names" field exactly.
-// ─────────────────────────────────────────────────────────────────────────────
+static constexpr const char* DEFAULT_TOOL_MODEL =
+    "surgical_tool_detector_yolov8_640.onnx";
+static constexpr const char* DEFAULT_GRASP_MODEL =
+    "grasp_state_detector_yolov8_640.onnx";
+static constexpr const char* DEFAULT_DEFECT_MODEL =
+    "tool_defect_classifier_resnet_512_b4.onnx";
+static constexpr const char* WINDOW_NAME = "SGTDetector";
+
 static const std::vector<std::string> CLASS_NAMES = {
-    "cefangkaikouqi",        //  0
-    "guqian",                //  1
-    "gujian",                //  2
-    "gudao",                 //  3
-    "xianjian",              //  4
-    "yating",                //  5
-    "bayaqian",              //  6
-    "guchui",                //  7
-    "shaozi",                //  8
-    "7haodaobing",           //  9
-    "3haodaobing",           // 10
-    "dagumo",                // 11
-    "gucuo",                 // 12
-    "zhenchi",               // 13
-    "zhizhixueqian",         // 14
-    "wanzhixueqian",         // 15
-    "paqian",                // 16
-    "kekeqian",              // 17
-    "xiaoduqian",            // 18
-    "xichiqian",             // 19
-    "zuzhinie",              // 20
-    "dangou",                // 21
-    "pingnie",               // 22
-    "zuzhijian",             // 23
-    "zhijiaoqian",           // 24
-    "jiazhuangxianlagou",    // 25
-    "huanqian",              // 26
-    "xiaogumo",              // 27
-    "sichilagou",            // 28
-    "guachi",                // 29
-    "gangsijian",            // 30
-    "xiaolagou",             // 31
-    "eliekaikouqi",          // 32
-    "yasheban",              // 33
-    "eliejian",              // 34
-    "xueguanshenjingboliqi1",// 35
-    "xueguanshenjingboliqi2",// 36
-    "yingeboliqi",           // 37
+    "cefangkaikouqi",
+    "guqian",
+    "gujian",
+    "gudao",
+    "xianjian",
+    "yating",
+    "bayaqian",
+    "guchui",
+    "shaozi",
+    "7haodaobing",
+    "3haodaobing",
+    "dagumo",
+    "gucuo",
+    "zhenchi",
+    "zhizhixueqian",
+    "wanzhixueqian",
+    "paqian",
+    "kekeqian",
+    "xiaoduqian",
+    "xichiqian",
+    "zuzhinie",
+    "dangou",
+    "pingnie",
+    "zuzhijian",
+    "zhijiaoqian",
+    "jiazhuangxianlagou",
+    "huanqian",
+    "xiaogumo",
+    "sichilagou",
+    "guachi",
+    "gangsijian",
+    "xiaolagou",
+    "eliekaikouqi",
+    "yasheban",
+    "eliejian",
+    "xueguanshenjingboliqi1",
+    "xueguanshenjingboliqi2",
+    "yingeboliqi",
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Save screenshot to the working directory; return the file path.
-// ─────────────────────────────────────────────────────────────────────────────
+static const std::vector<std::string> GRASP_CLASS_NAMES = {
+    "work",
+    "grasp",
+};
+
+enum class InferenceMode {
+    Tool,
+    Grasp,
+    Defect,
+};
+
+static std::string toLowerAscii(std::string text)
+{
+    std::transform(
+        text.begin(), text.end(), text.begin(),
+        [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
+    return text;
+}
+
+static const char* modeToString(InferenceMode mode)
+{
+    switch (mode) {
+    case InferenceMode::Tool:
+        return "tool";
+    case InferenceMode::Grasp:
+        return "grasp";
+    case InferenceMode::Defect:
+        return "defect";
+    }
+    return "tool";
+}
+
+static InferenceMode parseMode(const std::string& rawMode)
+{
+    const std::string mode = toLowerAscii(rawMode);
+    if (mode == "tool") return InferenceMode::Tool;
+    if (mode == "grasp") return InferenceMode::Grasp;
+    if (mode == "defect") return InferenceMode::Defect;
+    throw std::runtime_error(
+        "invalid mode: " + rawMode + " (expected: tool|grasp|defect)");
+}
+
+struct ModeButtonOverlayState {
+    std::vector<std::pair<InferenceMode, cv::Rect>> hitRegions;
+    InferenceMode pendingMode = InferenceMode::Tool;
+    bool hasPendingMode = false;
+};
+
+static void onModeOverlayMouse(int event, int x, int y, int, void* userdata)
+{
+    if (event != cv::EVENT_LBUTTONUP || userdata == nullptr) {
+        return;
+    }
+
+    auto* state = static_cast<ModeButtonOverlayState*>(userdata);
+    const cv::Point clickPoint(x, y);
+    for (const auto& [mode, rect] : state->hitRegions) {
+        if (rect.contains(clickPoint)) {
+            state->pendingMode = mode;
+            state->hasPendingMode = true;
+            break;
+        }
+    }
+}
+
+static void drawModeButtons(cv::Mat& frame,
+                            InferenceMode currentMode,
+                            ModeButtonOverlayState& state)
+{
+    struct ModeButtonSpec {
+        InferenceMode mode;
+        const char* label;
+    };
+
+    static constexpr std::array<ModeButtonSpec, 3> MODE_BUTTONS = {{
+        {InferenceMode::Tool, "Tool"},
+        {InferenceMode::Grasp, "Grasp"},
+        {InferenceMode::Defect, "Defect"},
+    }};
+
+    static constexpr int margin = 12;
+    static constexpr int buttonWidth = 88;
+    static constexpr int buttonHeight = 30;
+    static constexpr int gap = 8;
+
+    state.hitRegions.clear();
+    const int totalWidth = static_cast<int>(MODE_BUTTONS.size()) * buttonWidth
+        + static_cast<int>(MODE_BUTTONS.size() - 1) * gap;
+    const int startX = std::max(margin, frame.cols - margin - totalWidth);
+    const int startY = margin;
+
+    for (size_t i = 0; i < MODE_BUTTONS.size(); ++i) {
+        const auto& button = MODE_BUTTONS[i];
+        const cv::Rect rect(
+            startX + static_cast<int>(i) * (buttonWidth + gap),
+            startY,
+            buttonWidth,
+            buttonHeight);
+
+        state.hitRegions.emplace_back(button.mode, rect);
+
+        const bool active = (button.mode == currentMode);
+        const cv::Scalar fillColor = active
+            ? cv::Scalar(50, 160, 70)
+            : cv::Scalar(55, 55, 55);
+        const cv::Scalar borderColor = active
+            ? cv::Scalar(120, 255, 150)
+            : cv::Scalar(180, 180, 180);
+        cv::rectangle(frame, rect, fillColor, cv::FILLED);
+        cv::rectangle(frame, rect, borderColor, 1);
+
+        int baseline = 0;
+        const cv::Size textSize = cv::getTextSize(
+            button.label,
+            cv::FONT_HERSHEY_SIMPLEX,
+            0.50,
+            1,
+            &baseline);
+        const cv::Point textPos(
+            rect.x + (rect.width - textSize.width) / 2,
+            rect.y + (rect.height + textSize.height) / 2 - 2);
+        cv::putText(
+            frame,
+            button.label,
+            textPos,
+            cv::FONT_HERSHEY_SIMPLEX,
+            0.50,
+            cv::Scalar(240, 240, 240),
+            1,
+            cv::LINE_AA);
+    }
+}
+
+struct AppOptions {
+    int         cameraId      = 0;
+    InferenceMode mode        = InferenceMode::Tool;
+    std::string toolModel     = DEFAULT_TOOL_MODEL;
+    std::string graspModel    = DEFAULT_GRASP_MODEL;
+    std::string defectModel   = DEFAULT_DEFECT_MODEL;
+};
+
+static void printUsage(const char* exe)
+{
+    std::cout
+        << "Usage:\n"
+        << "  " << exe << " [camera_id] [tool_model]\n"
+        << "  " << exe << " [camera_id] [--mode tool|grasp|defect] [--tool-model path] [--grasp-model path] [--defect-model path]\n"
+        << "Options:\n"
+        << "  --mode <tool|grasp|defect>  Inference mode (default: tool)\n"
+        << "  --tool-model <path>      Surgical tool detector ONNX\n"
+        << "  --grasp-model <path>     Grasp/work detector ONNX\n"
+        << "  --defect-model <path>    Tool defect classifier ONNX\n"
+        << "  --help                   Show this help\n";
+}
+
+static std::string requireValue(int& i, int argc, char* argv[], const std::string& opt)
+{
+    if (i + 1 >= argc) {
+        throw std::runtime_error("missing value for " + opt);
+    }
+    return argv[++i];
+}
+
+static AppOptions parseArgs(int argc, char* argv[])
+{
+    AppOptions opts;
+    bool cameraSet = false;
+    bool legacyToolModelSet = false;
+
+    for (int i = 1; i < argc; ++i) {
+        std::string arg = argv[i];
+
+        if (arg == "--help" || arg == "-h") {
+            printUsage(argv[0]);
+            std::exit(0);
+        } else if (arg == "--mode") {
+            opts.mode = parseMode(requireValue(i, argc, argv, arg));
+        } else if (arg == "--tool-model") {
+            opts.toolModel = requireValue(i, argc, argv, arg);
+        } else if (arg == "--grasp-model") {
+            opts.graspModel = requireValue(i, argc, argv, arg);
+        } else if (arg == "--defect-model") {
+            opts.defectModel = requireValue(i, argc, argv, arg);
+        } else if (arg == "--disable-grasp" || arg == "--disable-defect") {
+            throw std::runtime_error(
+                arg + " is no longer supported; use --mode tool|grasp|defect");
+        } else if (arg.rfind("--", 0) == 0) {
+            throw std::runtime_error("unknown option: " + arg);
+        } else if (!cameraSet) {
+            opts.cameraId = std::atoi(arg.c_str());
+            cameraSet = true;
+        } else if (!legacyToolModelSet) {
+            opts.toolModel = arg;
+            legacyToolModelSet = true;
+        } else {
+            throw std::runtime_error("unexpected positional argument: " + arg);
+        }
+    }
+
+    // Keep legacy positional model argument usable across new modes.
+    if (legacyToolModelSet) {
+        if (opts.mode == InferenceMode::Grasp) {
+            opts.graspModel = opts.toolModel;
+        } else if (opts.mode == InferenceMode::Defect) {
+            opts.defectModel = opts.toolModel;
+        }
+    }
+
+    return opts;
+}
+
 static std::string saveScreenshot(const cv::Mat& frame)
 {
     auto now = std::chrono::system_clock::now();
@@ -89,6 +312,7 @@ static std::string saveScreenshot(const cv::Mat& frame)
 #else
     localtime_r(&t, &tm);
 #endif
+
     std::ostringstream oss;
     oss << "screenshot_" << std::put_time(&tm, "%Y%m%d_%H%M%S") << ".jpg";
     const std::string path = oss.str();
@@ -96,71 +320,163 @@ static std::string saveScreenshot(const cv::Mat& frame)
     return path;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Resolve an asset path: check argv[0] directory first, then CWD.
-// ─────────────────────────────────────────────────────────────────────────────
 static std::string resolveAsset(const fs::path& exeDir, const std::string& name)
 {
-    fs::path candidate = exeDir / name;
-    if (fs::exists(candidate)) return candidate.string();
-    if (fs::exists(fs::path(name))) return name;
-    return name; // let downstream code emit the error
+    fs::path raw(name);
+    std::vector<fs::path> candidates;
+
+    if (raw.is_absolute()) {
+        candidates.push_back(raw);
+    } else {
+        candidates.push_back(exeDir / raw);
+        candidates.push_back(exeDir / "models" / raw);
+        candidates.push_back(raw);
+        candidates.push_back(fs::path("assets") / "models" / raw);
+        candidates.push_back(fs::path("assets") / raw);
+    }
+
+    for (const auto& candidate : candidates) {
+        if (fs::exists(candidate)) return candidate.string();
+    }
+    return raw.string();
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+static int countDefects(const std::vector<sgt::DefectResult>& defects)
+{
+    return static_cast<int>(std::count_if(
+        defects.begin(), defects.end(),
+        [](const sgt::DefectResult& r) { return r.defective; }));
+}
+
 int main(int argc, char* argv[])
 {
-    // ── Parse CLI ──────────────────────────────────────────────────────────
-    int cameraId = 0;
-    if (argc > 1) cameraId = std::atoi(argv[1]);
+    AppOptions opts;
+    try {
+        opts = parseArgs(argc, argv);
+    } catch (const std::exception& e) {
+        std::cerr << "[FATAL] " << e.what() << "\n";
+        printUsage(argv[0]);
+        return 1;
+    }
 
     auto exeDir = fs::path(argv[0]).parent_path();
-    std::string modelPath = resolveAsset(exeDir, "best.onnx");
-    std::string dictPath  = resolveAsset(exeDir, "labels.dict");
-    if (argc > 2) modelPath = argv[2];
+    std::string toolModelPath = resolveAsset(exeDir, opts.toolModel);
+    std::string graspModelPath = resolveAsset(exeDir, opts.graspModel);
+    std::string defectModelPath = resolveAsset(exeDir, opts.defectModel);
+    std::string dictPath = resolveAsset(exeDir, "labels.dict");
 
-    // ── Assemble modules via dependency injection ──────────────────────────
-    std::unique_ptr<sgt::LabelProvider>   labels;
-    std::unique_ptr<sgt::DetectorBackend> detector;
-    std::unique_ptr<sgt::Renderer>        renderer;
+    std::unique_ptr<sgt::LabelProvider>        toolLabels;
+    std::unique_ptr<sgt::LabelProvider>        graspLabels;
+    std::unique_ptr<sgt::DetectorBackend>      toolDetector;
+    std::unique_ptr<sgt::DetectorBackend>      graspDetector;
+    std::unique_ptr<sgt::OnnxDefectClassifier> defectClassifier;
+    std::unique_ptr<sgt::Renderer>             renderer;
+    InferenceMode                              currentMode = opts.mode;
+    std::string                                activeModelPath;
+    float                                      detectorConfThresh = 0.0f;
+
+    auto ensureModeLoaded = [&](InferenceMode mode) -> bool {
+        try {
+            if (mode == InferenceMode::Tool) {
+                if (!toolDetector) {
+                    if (!toolLabels) {
+                        toolLabels = std::make_unique<sgt::DictLabelProvider>(
+                            dictPath,
+                            CLASS_NAMES);
+                    }
+                    toolDetector = std::make_unique<sgt::YoloOnnxDetector>(
+                        toolModelPath,
+                        640,
+                        0.25f,
+                        0.45f,
+                        toolLabels.get());
+                }
+                activeModelPath = toolModelPath;
+                detectorConfThresh = toolDetector->getConfThresh();
+                return true;
+            }
+
+            if (mode == InferenceMode::Grasp) {
+                if (!graspDetector) {
+                    if (!graspLabels) {
+                        graspLabels = std::make_unique<sgt::DictLabelProvider>(
+                            "",
+                            GRASP_CLASS_NAMES);
+                    }
+                    graspDetector = std::make_unique<sgt::YoloOnnxDetector>(
+                        graspModelPath,
+                        640,
+                        0.25f,
+                        0.45f,
+                        graspLabels.get());
+                }
+                activeModelPath = graspModelPath;
+                detectorConfThresh = graspDetector->getConfThresh();
+                return true;
+            }
+
+            if (!defectClassifier) {
+                defectClassifier = std::make_unique<sgt::OnnxDefectClassifier>(
+                    defectModelPath,
+                    512,
+                    4,
+                    0.50f);
+            }
+            activeModelPath = defectModelPath;
+            return true;
+        } catch (const std::exception& e) {
+            std::cerr << "[FATAL] Failed to load mode " << modeToString(mode)
+                      << ": " << e.what() << "\n";
+            return false;
+        }
+    };
 
     try {
-        labels = std::make_unique<sgt::DictLabelProvider>(dictPath, CLASS_NAMES);
-
-        detector = std::make_unique<sgt::YoloOnnxDetector>(
-            modelPath,
-            /*inputSize*/  640,
-            /*confThresh*/ 0.25f,
-            /*nmsThresh*/  0.45f,
-            labels.get());
-
-        // ── Swap these two lines to switch to a different renderer/font ────
         auto font = std::make_unique<sgt::OpenCVFontRenderer>();
-        renderer  = std::make_unique<sgt::OpenCVRenderer>(std::move(font));
-        // ─────────────────────────────────────────────────────────────────
-
+        renderer = std::make_unique<sgt::OpenCVRenderer>(
+            std::move(font),
+            WINDOW_NAME);
     } catch (const std::exception& e) {
         std::cerr << "[FATAL] Initialization failed: " << e.what() << "\n";
         return 1;
     }
 
-    // ── Open camera ────────────────────────────────────────────────────────
-    cv::VideoCapture cap(cameraId);
+    if (!ensureModeLoaded(currentMode)) {
+        return 1;
+    }
+
+    cv::VideoCapture cap(opts.cameraId);
     if (!cap.isOpened()) {
-        std::cerr << "[FATAL] Cannot open camera " << cameraId << "\n";
+        std::cerr << "[FATAL] Cannot open camera " << opts.cameraId << "\n";
         return 1;
     }
     cap.set(cv::CAP_PROP_FRAME_WIDTH,  1280);
     cap.set(cv::CAP_PROP_FRAME_HEIGHT, 720);
 
-    std::cout << "[SGTDetector] Camera " << cameraId
+    std::cout << "[SGTDetector] Camera " << opts.cameraId
               << " opened. Press q/ESC to quit.\n";
+    std::cout << "[SGTDetector] Mode         : " << modeToString(currentMode) << "\n";
+    std::cout << "[SGTDetector] Active model : " << activeModelPath << "\n";
 
-    // ── Main loop ──────────────────────────────────────────────────────────
+    ModeButtonOverlayState modeButtonState;
+    cv::setMouseCallback(WINDOW_NAME, onModeOverlayMouse, &modeButtonState);
+
+    auto switchMode = [&](InferenceMode requestedMode, const char* source) {
+        if (requestedMode == currentMode) return;
+
+        if (!ensureModeLoaded(requestedMode)) {
+            return;
+        }
+
+        currentMode = requestedMode;
+        std::cout << "[SGTDetector] Mode switched (" << source << "): "
+                  << modeToString(currentMode)
+                  << " | model: " << activeModelPath << "\n";
+    };
+
     cv::Mat frame;
-    auto    lastTime   = std::chrono::steady_clock::now();
-    float   fps        = 0.0f;
-    float   confThresh = detector->getConfThresh();
+    auto  lastTime          = std::chrono::steady_clock::now();
+    float fps               = 0.0f;
 
     while (true) {
         if (!cap.read(frame) || frame.empty()) {
@@ -168,41 +484,112 @@ int main(int argc, char* argv[])
             continue;
         }
 
-        // ── Inference ──────────────────────────────────────────────────────
-        std::vector<sgt::Detection> dets;
-        try {
-            dets = detector->detect(frame);
-        } catch (const std::exception& e) {
-            std::cerr << "[WARN] Inference error: " << e.what() << "\n";
+        sgt::DetectorBackend* activeDetector = nullptr;
+        sgt::OnnxDefectClassifier* activeDefectClassifier = nullptr;
+        if (currentMode == InferenceMode::Tool) {
+            activeDetector = toolDetector.get();
+        } else if (currentMode == InferenceMode::Grasp) {
+            activeDetector = graspDetector.get();
+        } else {
+            activeDefectClassifier = defectClassifier.get();
         }
 
-        // ── FPS (exponential moving average, weight = 0.1) ─────────────────
+        std::vector<sgt::Detection>    detections;
+        std::vector<sgt::DefectResult> defectResults;
+
+        try {
+            if (activeDetector) {
+                detections = activeDetector->detect(frame);
+            }
+            if (activeDefectClassifier) {
+                sgt::Detection frameRegion;
+                frameRegion.bbox = {
+                    0.0f,
+                    0.0f,
+                    static_cast<float>(frame.cols),
+                    static_cast<float>(frame.rows),
+                };
+                frameRegion.label = "frame";
+                defectResults = activeDefectClassifier->classify(
+                    frame,
+                    std::vector<sgt::Detection>{frameRegion});
+            }
+        } catch (const std::exception& e) {
+            std::cerr << "[WARN] Inference error (" << modeToString(currentMode)
+                      << "): " << e.what() << "\n";
+        }
+
         {
-            auto   now     = std::chrono::steady_clock::now();
-            float  elapsed = std::chrono::duration<float>(now - lastTime).count();
+            auto now = std::chrono::steady_clock::now();
+            float elapsed = std::chrono::duration<float>(now - lastTime).count();
             lastTime = now;
-            float  instant = (elapsed > 0.0f) ? (1.0f / elapsed) : 0.0f;
+            float instant = (elapsed > 0.0f) ? (1.0f / elapsed) : 0.0f;
             fps = fps * 0.9f + instant * 0.1f;
         }
 
-        // ── Render ─────────────────────────────────────────────────────────
-        renderer->drawDetections(frame, dets);
-        renderer->drawHUD(frame, {fps, confThresh, static_cast<int>(dets.size())});
+        if (activeDetector) {
+            renderer->drawDetections(frame, detections);
+        }
+        if (activeDefectClassifier) {
+            renderer->drawDefects(frame, defectResults);
+        }
 
-        // ── Display + keyboard ─────────────────────────────────────────────
+        sgt::HUDData hud;
+        hud.fps = fps;
+        hud.modeName = modeToString(currentMode);
+        hud.confThresh = detectorConfThresh;
+        hud.graspConfThresh = 0.0f;
+        hud.defectThresh = activeDefectClassifier
+            ? activeDefectClassifier->getDefectThresh()
+            : 0.0f;
+        hud.detections = static_cast<int>(detections.size());
+        hud.graspDetections = 0;
+        hud.defects = countDefects(defectResults);
+        hud.graspEnabled = false;
+        hud.defectEnabled = (activeDefectClassifier != nullptr);
+        renderer->drawHUD(frame, hud);
+        drawModeButtons(frame, currentMode, modeButtonState);
+
         int key = renderer->showFrame(frame) & 0xFF;
+
+        if (modeButtonState.hasPendingMode) {
+            switchMode(modeButtonState.pendingMode, "GUI Button");
+            modeButtonState.hasPendingMode = false;
+        }
 
         if (key == 27 || key == 'q' || key == 'Q') break;
 
+        if (key == '1') switchMode(InferenceMode::Tool, "Hotkey");
+        if (key == '2') switchMode(InferenceMode::Grasp, "Hotkey");
+        if (key == '3') switchMode(InferenceMode::Defect, "Hotkey");
+
         if (key == '+' || key == '=') {
-            confThresh = std::min(confThresh + 0.05f, 0.95f);
-            detector->setConfThresh(confThresh);
-            std::cout << "[SGTDetector] Conf threshold -> " << confThresh << "\n";
+            if (activeDetector) {
+                detectorConfThresh = std::min(detectorConfThresh + 0.05f, 0.95f);
+                activeDetector->setConfThresh(detectorConfThresh);
+                std::cout << "[SGTDetector] " << modeToString(currentMode)
+                          << " conf -> " << detectorConfThresh << "\n";
+            } else if (activeDefectClassifier) {
+                float defectThresh =
+                    std::min(activeDefectClassifier->getDefectThresh() + 0.05f, 0.95f);
+                activeDefectClassifier->setDefectThresh(defectThresh);
+                std::cout << "[SGTDetector] defect threshold -> "
+                          << defectThresh << "\n";
+            }
         }
         if (key == '-' || key == '_') {
-            confThresh = std::max(confThresh - 0.05f, 0.05f);
-            detector->setConfThresh(confThresh);
-            std::cout << "[SGTDetector] Conf threshold -> " << confThresh << "\n";
+            if (activeDetector) {
+                detectorConfThresh = std::max(detectorConfThresh - 0.05f, 0.05f);
+                activeDetector->setConfThresh(detectorConfThresh);
+                std::cout << "[SGTDetector] " << modeToString(currentMode)
+                          << " conf -> " << detectorConfThresh << "\n";
+            } else if (activeDefectClassifier) {
+                float defectThresh =
+                    std::max(activeDefectClassifier->getDefectThresh() - 0.05f, 0.05f);
+                activeDefectClassifier->setDefectThresh(defectThresh);
+                std::cout << "[SGTDetector] defect threshold -> "
+                          << defectThresh << "\n";
+            }
         }
         if (key == 's' || key == 'S') {
             std::string path = saveScreenshot(frame);

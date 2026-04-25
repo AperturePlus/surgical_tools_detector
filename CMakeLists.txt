@@ -14,26 +14,35 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 #   cmake -B build -G Ninja -DWITH_FREETYPE=ON      (FreeType for CJK text)
 #   cmake -B build -G Ninja -DWITH_IMGUI=ON         (Dear ImGui renderer)
 #
-# Model asset
+# Model assets
 # ───────────
-# The ONNX model (best.onnx) must be generated from assets/v8s.pt before
-# building.  Run the export script for the desired backend first:
+# Runtime ONNX models live in assets/models/. The surgical tool detector can
+# be exported from assets/models/cat.pt before building:
 #
-#   python scripts/export_model.py --model assets/v8s.pt --backend cpu
-#   python scripts/export_model.py --model assets/v8s.pt --backend cuda
-#   python scripts/export_model.py --model assets/v8s.pt --backend directml
+#   python scripts/export_model.py --model assets/models/cat.pt --backend cpu --output-dir assets/models
 #
-# Override the model filename with -DSGT_MODEL_ASSET=<name> if needed.
+# Rename the exported best.onnx to surgical_tool_detector_yolov8_640.onnx.
+# Override model filenames with SGT_TOOL_MODEL_ASSET, SGT_GRASP_MODEL_ASSET,
+# and SGT_DEFECT_MODEL_ASSET if needed.
 # ─────────────────────────────────────────────────────────────────────────────
 option(WITH_FREETYPE "Enable FreeType font renderer for CJK/Unicode text" OFF)
 option(WITH_CUDA     "Enable CUDA Execution Provider for ONNX Runtime"    OFF)
 option(WITH_DIRECTML "Enable DirectML Execution Provider for ONNX Runtime" OFF)
 option(WITH_IMGUI    "Enable Dear ImGui renderer"                          OFF)
+option(SGT_RUN_WINDEPLOYQT "Run windeployqt6 after build"                  OFF)
 
-# Model asset filename to copy next to the executable (must exist in assets/).
-# The runtime always loads "best.onnx" from the executable directory.
-set(SGT_MODEL_ASSET "best.onnx" CACHE STRING
-    "ONNX model filename in assets/ to bundle with the release")
+# Runtime model filenames to copy next to the executable.
+set(SGT_TOOL_MODEL_ASSET "surgical_tool_detector_yolov8_640.onnx" CACHE STRING
+    "Surgical tool detector ONNX filename in assets/models/")
+set(SGT_GRASP_MODEL_ASSET "grasp_state_detector_yolov8_640.onnx" CACHE STRING
+    "Grasp/work detector ONNX filename in assets/models/")
+set(SGT_DEFECT_MODEL_ASSET "tool_defect_classifier_resnet_512_b4.onnx" CACHE STRING
+    "Tool defect classifier ONNX filename in assets/models/")
+set(SGT_RUNTIME_MODELS
+    "${SGT_TOOL_MODEL_ASSET}"
+    "${SGT_GRASP_MODEL_ASSET}"
+    "${SGT_DEFECT_MODEL_ASSET}"
+)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # OpenCV
@@ -100,17 +109,20 @@ set_target_properties(onnxruntime PROPERTIES
 # ─────────────────────────────────────────────────────────────────────────────
 set(SGT_SOURCES
     main.cpp
+    classifier/OnnxDefectClassifier.cpp
     detector/YoloOnnxDetector.cpp
     label/DictLabelProvider.cpp
     render/OpenCVFontRenderer.cpp
     render/OpenCVRenderer.cpp
 )
 set(SGT_HEADERS
+    core/DefectResult.h
     core/Detection.h
     core/DetectorBackend.h
     core/LabelProvider.h
     core/Renderer.h
     core/FontRenderer.h
+    classifier/OnnxDefectClassifier.h
     detector/YoloOnnxDetector.h
     label/DictLabelProvider.h
     render/OpenCVFontRenderer.h
@@ -178,23 +190,15 @@ target_compile_options(SGTDetector PRIVATE
 # ─────────────────────────────────────────────────────────────────────────────
 # Copy runtime assets next to the executable after build
 # ─────────────────────────────────────────────────────────────────────────────
-# Copy the ONNX model.  SGT_MODEL_ASSET selects which file from assets/ to
-# bundle (default: best.onnx).  It is always installed as "best.onnx" so that
-# the runtime path lookup in main.cpp never needs to change.
-if(NOT "${SGT_MODEL_ASSET}" STREQUAL "best.onnx")
+# Copy runtime ONNX models next to the executable.
+foreach(_model IN LISTS SGT_RUNTIME_MODELS)
     add_custom_command(TARGET SGTDetector POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${CMAKE_SOURCE_DIR}/assets/${SGT_MODEL_ASSET}"
-            "$<TARGET_FILE_DIR:SGTDetector>/best.onnx"
-        COMMENT "Copying ${SGT_MODEL_ASSET} -> best.onnx...")
-else()
-    add_custom_command(TARGET SGTDetector POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${CMAKE_SOURCE_DIR}/assets/best.onnx"
-            "$<TARGET_FILE_DIR:SGTDetector>/best.onnx"
-        COMMENT "Copying best.onnx...")
-endif()
-message(STATUS "Model asset: ${SGT_MODEL_ASSET} (installed as best.onnx)")
+            "${CMAKE_SOURCE_DIR}/assets/models/${_model}"
+            "$<TARGET_FILE_DIR:SGTDetector>/${_model}"
+        COMMENT "Copying ${_model}...")
+endforeach()
+message(STATUS "Runtime models: ${SGT_RUNTIME_MODELS}")
 
 add_custom_command(TARGET SGTDetector POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
@@ -237,6 +241,16 @@ endforeach()
 # windeployqt6 when available; otherwise qwindows.dll is copied manually.
 # ─────────────────────────────────────────────────────────────────────────────
 get_filename_component(MINGW_BIN "${CMAKE_CXX_COMPILER}" DIRECTORY)
+get_filename_component(MINGW_PREFIX_DIR "${MINGW_BIN}" DIRECTORY)
+get_filename_component(MSYS_ROOT_DIR "${MINGW_PREFIX_DIR}" DIRECTORY)
+find_program(BASH_EXECUTABLE
+    NAMES bash.exe bash
+    HINTS "${MSYS_ROOT_DIR}/usr/bin" "${MINGW_BIN}"
+    NO_DEFAULT_PATH
+)
+if(NOT BASH_EXECUTABLE)
+    find_program(BASH_EXECUTABLE NAMES bash.exe bash)
+endif()
 
 # --- ldd-based auto-deploy script -------------------------------------------
 # Written to the build tree at configure time; invoked as a POST_BUILD step.
@@ -245,6 +259,7 @@ file(WRITE "${CMAKE_BINARY_DIR}/deploy_runtime_dlls.sh" [=[
 # Copies every non-system DLL that <exe> depends on into <out_dir>.
 # Usage: bash deploy_runtime_dlls.sh <exe> <out_dir>
 set -euo pipefail
+export PATH="/usr/bin:/mingw64/bin:$PATH"
 
 EXE="$1"
 OUT="$2"
@@ -276,7 +291,7 @@ done
 ]=])
 
 add_custom_command(TARGET SGTDetector POST_BUILD
-    COMMAND bash "${CMAKE_BINARY_DIR}/deploy_runtime_dlls.sh"
+    COMMAND "${BASH_EXECUTABLE}" "${CMAKE_BINARY_DIR}/deploy_runtime_dlls.sh"
         "$<TARGET_FILE:SGTDetector>"
         "$<TARGET_FILE_DIR:SGTDetector>"
     COMMENT "Auto-deploying runtime DLLs via ldd...")
@@ -293,7 +308,7 @@ if(NOT WINDEPLOYQT6_EXECUTABLE)
     find_program(WINDEPLOYQT6_EXECUTABLE NAMES windeployqt6 windeployqt6.exe)
 endif()
 
-if(WINDEPLOYQT6_EXECUTABLE)
+if(SGT_RUN_WINDEPLOYQT AND WINDEPLOYQT6_EXECUTABLE)
     message(STATUS "windeployqt6 found: ${WINDEPLOYQT6_EXECUTABLE}")
     add_custom_command(TARGET SGTDetector POST_BUILD
         COMMAND "${WINDEPLOYQT6_EXECUTABLE}"
@@ -304,7 +319,7 @@ if(WINDEPLOYQT6_EXECUTABLE)
             "$<TARGET_FILE:SGTDetector>"
         COMMENT "Deploying Qt6 plugins via windeployqt6...")
 else()
-    message(STATUS "windeployqt6 not found; falling back to manual Qt6 platform plugin copy")
+    message(STATUS "windeployqt6 disabled or not found; falling back to manual Qt6 platform plugin copy")
     # Helper: copy a file only when the source path exists.
     file(WRITE "${CMAKE_BINARY_DIR}/copy_if_exists.cmake" [=[
 if(EXISTS "${SRC}")

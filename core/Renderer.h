@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <opencv2/core.hpp>
+#include "DefectResult.h"
 #include "Detection.h"
 
 namespace sgt {
@@ -10,9 +11,16 @@ namespace sgt {
 /// Data passed to Renderer::drawHUD() each frame.
 /// Adding new fields here does not require changing any Renderer interface contract.
 struct HUDData {
-    float fps          = 0.0f;
-    float confThresh   = 0.25f;
-    int   detections   = 0;         ///< Number of detections this frame
+    std::string modeName      = "tool";
+    float fps              = 0.0f;
+    float confThresh       = 0.25f;
+    float graspConfThresh  = 0.25f;
+    float defectThresh     = 0.50f;
+    int   detections       = 0;     ///< Tool detections this frame
+    int   graspDetections  = 0;     ///< Grasp/work detections this frame
+    int   defects          = 0;     ///< Defective tools this frame
+    bool  graspEnabled     = true;
+    bool  defectEnabled    = true;
 };
 
 /// Configuration knobs for Renderer implementations.
@@ -32,6 +40,10 @@ public:
     /// Draw bounding boxes + labels onto the frame in-place.
     virtual void drawDetections(cv::Mat&                      frame,
                                 const std::vector<Detection>& dets) = 0;
+
+    /// Draw defect classification overlays onto the frame in-place.
+    virtual void drawDefects(cv::Mat&                         frame,
+                             const std::vector<DefectResult>& defects) {}
 
     /// Overlay HUD information (FPS, threshold, hints) onto the frame in-place.
     virtual void drawHUD(cv::Mat& frame, const HUDData& hud) = 0;

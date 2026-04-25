@@ -92,6 +92,26 @@ void OpenCVRenderer::drawDetections(cv::Mat&                      frame,
     }
 }
 
+void OpenCVRenderer::drawDefects(cv::Mat&                         frame,
+                                 const std::vector<DefectResult>& defects)
+{
+    const cv::Scalar color(0, 0, 255);
+    for (const auto& d : defects) {
+        if (!d.defective) continue;
+
+        cv::Rect rect = d.bbox.toRect();
+        rect &= cv::Rect(0, 0, frame.cols, frame.rows);
+        if (rect.empty()) continue;
+
+        cv::rectangle(frame, rect, color, config.boxThickness + 2);
+
+        std::ostringstream label;
+        label << "Defect " << std::fixed << std::setprecision(0)
+              << (d.defectScore * 100.0f) << "%";
+        drawLabelBadge(frame, label.str(), cv::Point(rect.x, rect.y), color);
+    }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 void OpenCVRenderer::drawHUD(cv::Mat& frame, const HUDData& hud)
 {
@@ -113,12 +133,20 @@ void OpenCVRenderer::drawHUD(cv::Mat& frame, const HUDData& hud)
                        fs, cv::Scalar(0, 230, 80), thick);
     }
 
-    // ── Status bar (top-left): conf threshold + det count + key hints ─────
+    // ── Status bar (top-left): mode + threshold/count + key hints ─────────
     {
         std::ostringstream ss;
-        ss << "Conf:" << std::fixed << std::setprecision(2) << hud.confThresh
-           << "  Det:" << hud.detections
-           << "  [+/-]conf  [s]shot  [q]quit";
+        ss << "Mode:" << hud.modeName;
+        if (hud.defectEnabled) {
+            ss << "  DefThr:" << std::fixed << std::setprecision(2)
+               << hud.defectThresh
+               << "  Defect:" << hud.defects;
+        } else {
+            ss << "  Conf:" << std::fixed << std::setprecision(2)
+               << hud.confThresh
+               << "  Det:" << hud.detections;
+        }
+        ss << "  [btn/1/2/3]mode  [+/-]thr  [s]shot  [q]quit";
 
         font_->putText(frame, ss.str(), {9, 23},
                        fs, cv::Scalar(0, 0, 0), thick + 1);
