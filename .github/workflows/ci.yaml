@@ -11,49 +11,12 @@ env:
 
 jobs:
   # ─────────────────────────────────────────────────────────────────────────────
-  # Export the PyTorch model (v8s.pt) to ONNX on a Linux runner.
-  # A single fp32 ONNX model is produced and shared by all three build variants.
-  # (fp16 ONNX requires C++ tensor-type changes; use --backend all locally to
-  #  also generate best_fp16.onnx for advanced experimentation.)
-  # ─────────────────────────────────────────────────────────────────────────────
-  export-model:
-    name: Export model (v8s.pt → best.onnx)
-    runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-          cache: 'pip'
-          cache-dependency-path: requirements-export.txt
-
-      - name: Install export dependencies
-        run: pip install -r requirements-export.txt
-
-      - name: Export fp32 ONNX (used by cpu, cuda, and directml builds)
-        run: python scripts/export_model.py --model assets/v8s.pt --backend cpu
-
-      - name: Upload ONNX model artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: onnx-model
-          path: assets/best.onnx
-          if-no-files-found: error
-
-  # ─────────────────────────────────────────────────────────────────────────────
   # Build & test on every push / pull-request.
   # On a tag push, also package the binary and upload it as a workflow artifact.
   # ─────────────────────────────────────────────────────────────────────────────
   build:
     name: Build (Windows / MinGW-w64 / ${{ matrix.backend }})
     runs-on: windows-latest
-    needs: export-model
     strategy:
       fail-fast: false
       matrix:
@@ -80,13 +43,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
-      # Download the ONNX model produced by the export-model job.
-      - name: Download ONNX model artifact
-        uses: actions/download-artifact@v4.1.8
-        with:
-          name: onnx-model
-          path: assets
 
       # Install MSYS2 + all MinGW-w64 packages needed to compile the project.
       # pacboy uses the ":p" suffix as shorthand for "mingw-w64-x86_64-".
@@ -148,7 +104,8 @@ jobs:
           Copy-Item build\SGTDetector.exe $out\
           Get-ChildItem build\*.dll -ErrorAction SilentlyContinue |
               Copy-Item -Destination $out\
-          Copy-Item build\best.onnx   $out\
+          Get-ChildItem build\*.onnx -ErrorAction SilentlyContinue |
+              Copy-Item -Destination $out\
           Copy-Item build\labels.dict $out\
 
           # Copy any Qt6 plugin sub-directories (platforms, imageformats, styles, …)
