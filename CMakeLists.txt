@@ -109,6 +109,8 @@ set_target_properties(onnxruntime PROPERTIES
 # ─────────────────────────────────────────────────────────────────────────────
 set(SGT_SOURCES
     main.cpp
+    api/ExportAPI.cpp
+    api/ImageInputAPI.cpp
     classifier/OnnxDefectClassifier.cpp
     detector/YoloOnnxDetector.cpp
     label/DictLabelProvider.cpp
@@ -116,6 +118,8 @@ set(SGT_SOURCES
     render/OpenCVRenderer.cpp
 )
 set(SGT_HEADERS
+    api/ExportAPI.h
+    api/ImageInputAPI.h
     core/DefectResult.h
     core/Detection.h
     core/DetectorBackend.h
