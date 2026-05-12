@@ -20,4 +20,6 @@ version/
 
 *cat.pt
 
-docs/
+docs/*
+!docs/superpowers/
+!docs/superpowers/**
