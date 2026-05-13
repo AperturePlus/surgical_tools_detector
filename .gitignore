@@ -19,3 +19,9 @@ build*/
 version/
 
 *cat.pt
+
+docs/*
+!docs/superpowers/
+!docs/superpowers/**
+
+.claude

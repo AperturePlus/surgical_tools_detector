@@ -24,8 +24,6 @@ OpenCVRenderer::~OpenCVRenderer()
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Golden-angle HSV color distribution — visually distinct across 38 classes
-// ─────────────────────────────────────────────────────────────────────────────
 cv::Scalar OpenCVRenderer::classColor(int classId)
 {
     float hue = std::fmod(static_cast<float>(classId) * 137.508f, 360.0f);
@@ -37,8 +35,6 @@ cv::Scalar OpenCVRenderer::classColor(int classId)
     return cv::Scalar(p[0], p[1], p[2]);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Draw a filled badge with white text; auto-flips below the box when clipped
 // ─────────────────────────────────────────────────────────────────────────────
 void OpenCVRenderer::drawLabelBadge(cv::Mat&           frame,
                                     const std::string& text,
@@ -53,22 +49,17 @@ void OpenCVRenderer::drawLabelBadge(cv::Mat&           frame,
     int bx = anchor.x;
     int by = anchor.y - sz.height - baseline - padY * 2;
 
-    // Flip below the top edge if label goes out of frame
     if (by < 0) by = anchor.y + padY;
-
-    // Prevent right-edge overflow
     if (bx + sz.width + padX * 2 > frame.cols)
         bx = frame.cols - sz.width - padX * 2;
 
     cv::Rect bg(bx, by, sz.width + padX * 2, sz.height + baseline + padY * 2);
-    bg &= cv::Rect(0, 0, frame.cols, frame.rows); // clamp to frame
+    bg &= cv::Rect(0, 0, frame.cols, frame.rows);
 
     cv::rectangle(frame, bg, bgColor, cv::FILLED);
     font_->putText(frame, text,
                    cv::Point(bx + padX, by + sz.height + padY),
-                   fontScale,
-                   cv::Scalar(255, 255, 255),
-                   1);
+                   fontScale, cv::Scalar(255, 255, 255), 1);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -78,7 +69,6 @@ void OpenCVRenderer::drawDetections(cv::Mat&                      frame,
     for (const auto& d : dets) {
         cv::Scalar color = classColor(d.classId);
         cv::Rect   rect  = d.bbox.toRect();
-
         cv::rectangle(frame, rect, color, config.boxThickness);
 
         std::ostringstream label;
@@ -87,8 +77,7 @@ void OpenCVRenderer::drawDetections(cv::Mat&                      frame,
             label << " " << std::fixed << std::setprecision(0)
                   << (d.score * 100.0f) << "%";
         }
-        drawLabelBadge(frame, label.str(),
-                       cv::Point(rect.x, rect.y), color);
+        drawLabelBadge(frame, label.str(), cv::Point(rect.x, rect.y), color);
     }
 }
 
@@ -98,13 +87,11 @@ void OpenCVRenderer::drawDefects(cv::Mat&                         frame,
     const cv::Scalar color(0, 0, 255);
     for (const auto& d : defects) {
         if (!d.defective) continue;
-
         cv::Rect rect = d.bbox.toRect();
         rect &= cv::Rect(0, 0, frame.cols, frame.rows);
         if (rect.empty()) continue;
 
         cv::rectangle(frame, rect, color, config.boxThickness + 2);
-
         std::ostringstream label;
         label << "Defect " << std::fixed << std::setprecision(0)
               << (d.defectScore * 100.0f) << "%";
@@ -118,7 +105,6 @@ void OpenCVRenderer::drawHUD(cv::Mat& frame, const HUDData& hud)
     const double fs    = 0.58;
     const int    thick = 1;
 
-    // ── FPS counter (top-right) ────────────────────────────────────────────
     if (config.showFPS) {
         std::ostringstream ss;
         ss << "FPS: " << std::fixed << std::setprecision(1) << hud.fps;
@@ -126,27 +112,28 @@ void OpenCVRenderer::drawHUD(cv::Mat& frame, const HUDData& hud)
         cv::Size sz = font_->getTextSize(ss.str(), fs, thick, &baseline);
         cv::Point pos(frame.cols - sz.width - 10, sz.height + 10);
 
-        // Drop-shadow for readability
         font_->putText(frame, ss.str(), {pos.x + 1, pos.y + 1},
                        fs, cv::Scalar(0, 0, 0), thick + 1);
         font_->putText(frame, ss.str(), pos,
                        fs, cv::Scalar(0, 230, 80), thick);
     }
 
-    // ── Status bar (top-left): mode + threshold/count + key hints ─────────
     {
         std::ostringstream ss;
-        ss << "Mode:" << hud.modeName;
-        if (hud.defectEnabled) {
-            ss << "  DefThr:" << std::fixed << std::setprecision(2)
-               << hud.defectThresh
-               << "  Defect:" << hud.defects;
-        } else {
-            ss << "  Conf:" << std::fixed << std::setprecision(2)
-               << hud.confThresh
-               << "  Det:" << hud.detections;
-        }
-        ss << "  [btn/1/2/3]mode  [+/-]thr  [s]shot  [q]quit";
+        ss << "Mode:";
+        bool first = true;
+        if (hud.activeModes & MODE_TOOL)   { ss << (first ? "" : "+") << "T"; first = false; }
+        if (hud.activeModes & MODE_GRASP)  { ss << (first ? "" : "+") << "G"; first = false; }
+        if (hud.activeModes & MODE_DEFECT) { ss << (first ? "" : "+") << "D"; first = false; }
+
+        if (hud.activeModes & MODE_TOOL)
+            ss << "  TDet:" << hud.toolDetections;
+        if (hud.activeModes & MODE_GRASP)
+            ss << "  GDet:" << hud.graspDetections;
+        if (hud.activeModes & MODE_DEFECT)
+            ss << "  Def:" << hud.defects;
+
+        ss << "  [1/2/3]toggle  [+/-]thr  [c]cap  [s]shot  [q]quit";
 
         font_->putText(frame, ss.str(), {9, 23},
                        fs, cv::Scalar(0, 0, 0), thick + 1);
@@ -154,7 +141,6 @@ void OpenCVRenderer::drawHUD(cv::Mat& frame, const HUDData& hud)
                        fs, cv::Scalar(220, 220, 220), thick);
     }
 
-    // ── Screenshot toast (center) ──────────────────────────────────────────
     if (screenshotFramesLeft_ > 0) {
         --screenshotFramesLeft_;
         const double tfs = 0.75;
@@ -180,10 +166,9 @@ int OpenCVRenderer::showFrame(const cv::Mat& frame)
 // ─────────────────────────────────────────────────────────────────────────────
 void OpenCVRenderer::onScreenshot(const std::string& path)
 {
-    // Show short base filename in toast
     auto sep = path.find_last_of("/\\");
     screenshotMsg_ = "Saved: " + (sep == std::string::npos ? path : path.substr(sep + 1));
-    screenshotFramesLeft_ = 75; // ~2.5 s @ 30 fps
+    screenshotFramesLeft_ = 75;
 }
 
 } // namespace sgt
