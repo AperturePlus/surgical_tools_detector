@@ -102,12 +102,13 @@ Key map:
 | `app/cameraId`                   | int    | 0               | `main.cpp` startup    |
 | `app/captureDir`                 | string | `""` → exeDir/captures | `main.cpp` startup |
 | `defaults/modeMask`              | int    | `MODE_TOOL`     | `main.cpp` startup    |
-| `defaults/threshold/tool`        | double | 0.6             | `main.cpp` startup    |
-| `defaults/threshold/grasp`       | double | 0.55            | `main.cpp` startup    |
-| `defaults/threshold/defect`      | double | 0.6             | `main.cpp` startup    |
+| `defaults/threshold/tool`        | double | 0.25            | `main.cpp` startup    |
+| `defaults/threshold/grasp`       | double | 0.25            | `main.cpp` startup    |
+| `defaults/threshold/defect`      | double | 0.50            | `main.cpp` startup    |
 
-`resetDefaults()` removes keys under `defaults/` (model defaults take over on
-next read).
+`resetDefaults()` removes keys under `defaults/` (so subsequent reads return
+the `DetectionThresholds{}` defaults defined in `core/DetectionMetadata.h`,
+i.e. the same values `ControlPanel`'s existing "Reset thresholds" button uses).
 
 ### 3.3 `ui/SettingsPage`
 
@@ -125,9 +126,9 @@ Preferences are saved automatically. Some changes apply on next launch.
 │  Applies on next launch.                                   │
 └────────────────────────────────────────────────────────────┘
 ┌── DETECTION DEFAULTS ──────────────────────────────────────┐
-│  Tool threshold     ▬▬▬●▬▬▬▬▬   60%                        │
-│  Grasp threshold    ▬▬▬●▬▬▬▬▬   55%                        │
-│  Defect threshold   ▬▬▬●▬▬▬▬▬   60%                        │
+│  Tool threshold     ▬▬▬●▬▬▬▬▬   25%                        │
+│  Grasp threshold    ▬▬▬●▬▬▬▬▬   25%                        │
+│  Defect threshold   ▬▬▬●▬▬▬▬▬   50%                        │
 │  Active modes       [✓] Tool  [✓] Grasp  [✓] Defect        │
 │  Applies on next launch.            [Reset to factory]     │
 └────────────────────────────────────────────────────────────┘

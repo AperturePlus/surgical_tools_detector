@@ -40,7 +40,6 @@ Sidebar::Sidebar(QWidget* parent)
     auto* live = makeNavButton("Live", "nav-live", 0);
     auto* gallery = makeNavButton("Gallery", "nav-gallery", 1);
     auto* settings = makeNavButton("Settings", "nav-settings", 2);
-    settings->setEnabled(false);
 
     layout->addWidget(live);
     layout->addWidget(gallery);

@@ -12,6 +12,7 @@
 #include "core/CaptureStore.h"
 #include "ui/GalleryPage.h"
 #include "ui/LivePage.h"
+#include "ui/SettingsPage.h"
 #include "ui/Sidebar.h"
 
 namespace sgt::ui {
@@ -25,7 +26,9 @@ AppShell::AppShell(AppOptions opts,
     , engine_(std::move(engine))
     , store_(std::move(store))
     , activeMask_(opts_.modeMask ? opts_.modeMask : MODE_TOOL)
+    , thresholds_(opts_.thresholds)
 {
+    engine_->setThresholds(thresholds_);
     buildUi();
     wireEvents();
     startCamera();
@@ -52,11 +55,13 @@ void AppShell::buildUi()
     stack_ = new QStackedWidget();
     livePage_ = new LivePage(activeMask_, thresholds_);
     galleryPage_ = new GalleryPage();
+    settingsPage_ = new SettingsPage();
     galleryPage_->setRecords(store_->records());
     livePage_->setModels(engine_->models());
 
     stack_->addWidget(livePage_);
     stack_->addWidget(galleryPage_);
+    stack_->addWidget(settingsPage_);
     layout->addWidget(sidebar_);
     layout->addWidget(stack_, 1);
     setCentralWidget(root);
