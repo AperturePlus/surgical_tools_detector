@@ -6,13 +6,12 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Optional features — enable at configure time:
-#   cmake -B build -G Ninja                         (CPU only, OpenCV HighGUI)
+#   cmake -B build -G Ninja                         (CPU only, Qt Widgets UI)
 #   cmake -B build -G Ninja -DWITH_CUDA=ON          (CUDA EP for GPU inference)
 #     expects deps/onnxruntime-win-x64-gpu-<version> by default
 #   cmake -B build -G Ninja -DWITH_DIRECTML=ON      (DirectML EP for AMD/Intel/NVIDIA on Windows)
 #     expects deps/onnxruntime-win-x64-<version> by default
 #   cmake -B build -G Ninja -DWITH_FREETYPE=ON      (FreeType for CJK text)
-#   cmake -B build -G Ninja -DWITH_IMGUI=ON         (Dear ImGui renderer)
 #
 # Model assets
 # ───────────
@@ -28,8 +27,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 option(WITH_FREETYPE "Enable FreeType font renderer for CJK/Unicode text" OFF)
 option(WITH_CUDA     "Enable CUDA Execution Provider for ONNX Runtime"    OFF)
 option(WITH_DIRECTML "Enable DirectML Execution Provider for ONNX Runtime" OFF)
-option(WITH_IMGUI    "Enable Dear ImGui renderer"                          OFF)
-option(SGT_RUN_WINDEPLOYQT "Run windeployqt6 after build"                  OFF)
+option(SGT_RUN_WINDEPLOYQT "Run windeployqt6 after build"                  ON)
 
 # Runtime model filenames to copy next to the executable.
 set(SGT_TOOL_MODEL_ASSET "surgical_tool_detector_yolov8_640.onnx" CACHE STRING
@@ -47,8 +45,14 @@ set(SGT_RUNTIME_MODELS
 # ─────────────────────────────────────────────────────────────────────────────
 # OpenCV
 # ─────────────────────────────────────────────────────────────────────────────
-find_package(OpenCV REQUIRED COMPONENTS core imgproc highgui videoio dnn)
+find_package(OpenCV REQUIRED COMPONENTS core imgproc imgcodecs videoio dnn)
 message(STATUS "OpenCV ${OpenCV_VERSION} found: ${OpenCV_DIR}")
+
+find_package(Qt6 REQUIRED COMPONENTS Widgets)
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTOUIC ON)
+
+qt_add_resources(SGT_QRC_FILES assets/icons.qrc)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # ONNX Runtime — bundled prebuilt in deps/, with MinGW import library
@@ -112,16 +116,38 @@ set(SGT_SOURCES
     api/ExportAPI.cpp
     api/ImageInputAPI.cpp
     classifier/OnnxDefectClassifier.cpp
+    core/CaptureStore.cpp
+    core/DetectionPipeline.cpp
     detector/YoloOnnxDetector.cpp
     label/DictLabelProvider.cpp
     render/OpenCVFontRenderer.cpp
-    render/OpenCVRenderer.cpp
+    ui/AppShell.cpp
+    ui/CaptureDetailDialog.cpp
+    ui/CaptureFAB.cpp
+    ui/Card.cpp
+    ui/ControlPanel.cpp
+    ui/FlowLayout.cpp
+    ui/GalleryPage.cpp
+    ui/HudOverlay.cpp
+    ui/LivePage.cpp
+    ui/LivePreviewWidget.cpp
+    ui/ModePillBar.cpp
+    ui/QtImageUtils.cpp
+    ui/Sidebar.cpp
+    ui/StatusChip.cpp
+    ui/Theme.cpp
+    ui/ThemeManager.cpp
+    ui/ThumbCard.cpp
+    ui/ThumbnailCache.cpp
 )
 set(SGT_HEADERS
     api/ExportAPI.h
     api/ImageInputAPI.h
+    core/CaptureStore.h
     core/DefectResult.h
     core/Detection.h
+    core/DetectionMetadata.h
+    core/DetectionPipeline.h
     core/DetectorBackend.h
     core/LabelProvider.h
     core/Renderer.h
@@ -130,7 +156,24 @@ set(SGT_HEADERS
     detector/YoloOnnxDetector.h
     label/DictLabelProvider.h
     render/OpenCVFontRenderer.h
-    render/OpenCVRenderer.h
+    ui/AppShell.h
+    ui/CaptureDetailDialog.h
+    ui/CaptureFAB.h
+    ui/Card.h
+    ui/ControlPanel.h
+    ui/FlowLayout.h
+    ui/GalleryPage.h
+    ui/HudOverlay.h
+    ui/LivePage.h
+    ui/LivePreviewWidget.h
+    ui/ModePillBar.h
+    ui/QtImageUtils.h
+    ui/Sidebar.h
+    ui/StatusChip.h
+    ui/Theme.h
+    ui/ThemeManager.h
+    ui/ThumbCard.h
+    ui/ThumbnailCache.h
 )
 
 # ── Optional: FreeType ────────────────────────────────────────────────────────
@@ -141,25 +184,47 @@ if(WITH_FREETYPE)
     message(STATUS "FreeType support enabled")
 endif()
 
-# ── Optional: Dear ImGui ──────────────────────────────────────────────────────
-if(WITH_IMGUI)
-    find_package(imgui CONFIG REQUIRED)
-    list(APPEND SGT_SOURCES render/ImGuiRenderer.cpp)
-    list(APPEND SGT_HEADERS render/ImGuiRenderer.h)
-    message(STATUS "Dear ImGui support enabled")
-endif()
-
 # ─────────────────────────────────────────────────────────────────────────────
 # Executable
 # ─────────────────────────────────────────────────────────────────────────────
-add_executable(SGTDetector ${SGT_SOURCES} ${SGT_HEADERS})
+add_executable(SGTDetector ${SGT_SOURCES} ${SGT_HEADERS} ${SGT_QRC_FILES})
 
 target_include_directories(SGTDetector PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(SGTDetector PRIVATE
     ${OpenCV_LIBS}
+    Qt6::Widgets
     onnxruntime
 )
+
+add_executable(CaptureStoreSmoke
+    tests/CaptureStoreSmoke.cpp
+    api/ExportAPI.cpp
+    core/CaptureStore.cpp
+)
+target_include_directories(CaptureStoreSmoke PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(CaptureStoreSmoke PRIVATE ${OpenCV_LIBS})
+
+add_executable(ThemeSmoke
+    tests/ThemeSmoke.cpp
+    ui/Theme.cpp
+    ${SGT_QRC_FILES}
+)
+target_include_directories(ThemeSmoke PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(ThemeSmoke PRIVATE Qt6::Core)
+
+add_executable(ThumbnailCacheSmoke
+    tests/ThumbnailCacheSmoke.cpp
+    ui/ThumbnailCache.cpp
+    ui/QtImageUtils.cpp
+)
+target_include_directories(ThumbnailCacheSmoke PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(ThumbnailCacheSmoke PRIVATE ${OpenCV_LIBS} Qt6::Widgets)
+
+enable_testing()
+add_test(NAME CaptureStoreSmoke COMMAND CaptureStoreSmoke)
+add_test(NAME ThemeSmoke COMMAND ThemeSmoke)
+add_test(NAME ThumbnailCacheSmoke COMMAND ThumbnailCacheSmoke)
 
 # ── Feature compile definitions ───────────────────────────────────────────────
 if(WITH_CUDA)
@@ -173,10 +238,6 @@ endif()
 if(WITH_FREETYPE)
     target_compile_definitions(SGTDetector PRIVATE SGT_WITH_FREETYPE)
     target_link_libraries(SGTDetector PRIVATE Freetype::Freetype)
-endif()
-if(WITH_IMGUI)
-    target_compile_definitions(SGTDetector PRIVATE SGT_WITH_IMGUI)
-    target_link_libraries(SGTDetector PRIVATE imgui::imgui)
 endif()
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -267,6 +328,9 @@ export PATH="/usr/bin:/mingw64/bin:$PATH"
 
 EXE="$1"
 OUT="$2"
+if command -v cygpath >/dev/null 2>&1; then
+    OUT="$(cygpath -u "$OUT")"
+fi
 
 if ! command -v ldd >/dev/null 2>&1; then
     echo "WARNING: ldd not found; skipping auto DLL deployment." >&2
@@ -285,7 +349,15 @@ ldd "$EXE" | while IFS= read -r line; do
         [[ "$lower" == */windows/* ]] && continue
         [[ "$lower" == */system32/* ]] && continue
         name="$(basename "$src")"
-        if cp -f "$src" "$OUT/$name" 2>/dev/null; then
+        src_dir="$(dirname "$src")"
+        if [[ "$(cd "$src_dir" && pwd -P)" == "$(cd "$OUT" && pwd -P)" ]]; then
+            continue
+        fi
+        dst="$OUT/$name"
+        if [[ "$(realpath -m "$src")" == "$(realpath -m "$dst")" ]]; then
+            continue
+        fi
+        if cp -f "$src" "$dst" 2>/dev/null; then
             echo "Deployed: $name"
         else
             echo "WARNING: failed to copy $src" >&2
@@ -340,6 +412,8 @@ endif()
 ]=])
     get_filename_component(_MINGW_PREFIX "${MINGW_BIN}" DIRECTORY)
     set(QT6_PLATFORMS "${_MINGW_PREFIX}/share/qt6/plugins/platforms")
+    set(QT6_IMAGEFORMATS "${_MINGW_PREFIX}/share/qt6/plugins/imageformats")
+    set(QT6_STYLES "${_MINGW_PREFIX}/share/qt6/plugins/styles")
     add_custom_command(TARGET SGTDetector POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory
             "$<TARGET_FILE_DIR:SGTDetector>/platforms"
@@ -348,4 +422,24 @@ endif()
             "-DDST=$<TARGET_FILE_DIR:SGTDetector>/platforms/qwindows.dll"
             -P "${CMAKE_BINARY_DIR}/copy_if_exists.cmake"
         COMMENT "Copying Qt6 platform plugin (if available)...")
+    add_custom_command(TARGET SGTDetector POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory
+            "$<TARGET_FILE_DIR:SGTDetector>/imageformats"
+        COMMAND ${CMAKE_COMMAND} -E make_directory
+            "$<TARGET_FILE_DIR:SGTDetector>/styles"
+        COMMENT "Preparing Qt6 plugin directories...")
+    foreach(_qt_image_plugin qjpeg.dll qico.dll qgif.dll qsvg.dll)
+        add_custom_command(TARGET SGTDetector POST_BUILD
+            COMMAND ${CMAKE_COMMAND}
+                "-DSRC=${QT6_IMAGEFORMATS}/${_qt_image_plugin}"
+                "-DDST=$<TARGET_FILE_DIR:SGTDetector>/imageformats/${_qt_image_plugin}"
+                -P "${CMAKE_BINARY_DIR}/copy_if_exists.cmake"
+            COMMENT "Copying Qt6 image plugin ${_qt_image_plugin} (if available)...")
+    endforeach()
+    add_custom_command(TARGET SGTDetector POST_BUILD
+        COMMAND ${CMAKE_COMMAND}
+            "-DSRC=${QT6_STYLES}/qmodernwindowsstyle.dll"
+            "-DDST=$<TARGET_FILE_DIR:SGTDetector>/styles/qmodernwindowsstyle.dll"
+            -P "${CMAKE_BINARY_DIR}/copy_if_exists.cmake"
+        COMMENT "Copying Qt6 style plugin (if available)...")
 endif()

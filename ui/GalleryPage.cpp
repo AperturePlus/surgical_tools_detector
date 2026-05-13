@@ -1,0 +1,167 @@
+#include "ui/GalleryPage.h"
+
+#include <algorithm>
+#include <functional>
+#include <map>
+
+#include <QDate>
+#include <QDateTime>
+#include <QFrame>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QLineEdit>
+#include <QPushButton>
+#include <QScrollArea>
+#include <QToolButton>
+#include <QVBoxLayout>
+
+#include "ui/CaptureDetailDialog.h"
+#include "ui/FlowLayout.h"
+#include "ui/ThumbCard.h"
+
+namespace sgt::ui {
+
+GalleryPage::GalleryPage(QWidget* parent)
+    : QWidget(parent)
+{
+    auto* root = new QVBoxLayout(this);
+    root->setContentsMargins(22, 18, 22, 18);
+    root->setSpacing(14);
+
+    auto* header = new QHBoxLayout();
+    header->setSpacing(10);
+    titleLabel_ = new QLabel("Captures - 0");
+    titleLabel_->setObjectName("AppTitle");
+    header->addWidget(titleLabel_);
+
+    searchEdit_ = new QLineEdit();
+    searchEdit_->setPlaceholderText("Search id or date");
+    searchEdit_->setMinimumWidth(260);
+    header->addWidget(searchEdit_);
+    header->addStretch();
+
+    auto* exportButton = new QPushButton("Export all...");
+    exportButton->setEnabled(false);
+    exportButton->setToolTip("Export is planned for a later phase.");
+    auto* overflow = new QToolButton();
+    overflow->setText("...");
+    overflow->setEnabled(false);
+    overflow->setToolTip("More gallery actions are planned for a later phase.");
+    header->addWidget(exportButton);
+    header->addWidget(overflow);
+    root->addLayout(header);
+
+    auto* scroll = new QScrollArea();
+    scroll->setWidgetResizable(true);
+    scroll->setFrameShape(QFrame::NoFrame);
+    content_ = new QWidget();
+    contentLayout_ = new QVBoxLayout(content_);
+    contentLayout_->setContentsMargins(0, 0, 0, 0);
+    contentLayout_->setSpacing(10);
+    scroll->setWidget(content_);
+    root->addWidget(scroll, 1);
+
+    connect(searchEdit_, &QLineEdit::textChanged, this, [this]() { rebuild(); });
+}
+
+void GalleryPage::setRecords(const std::vector<CaptureRecord>& records)
+{
+    records_ = records;
+    std::sort(records_.begin(), records_.end(), [](const CaptureRecord& a, const CaptureRecord& b) {
+        return a.timestamp > b.timestamp;
+    });
+    rebuild();
+}
+
+void GalleryPage::addRecord(const CaptureRecord& record)
+{
+    const auto existing = std::find_if(records_.begin(), records_.end(), [&](const CaptureRecord& item) {
+        return item.id == record.id;
+    });
+    if (existing == records_.end()) {
+        records_.push_back(record);
+    } else {
+        *existing = record;
+    }
+    setRecords(records_);
+}
+
+void GalleryPage::rebuild()
+{
+    titleLabel_->setText(QString("Captures - %1").arg(records_.size()));
+
+    QLayoutItem* item = nullptr;
+    while ((item = contentLayout_->takeAt(0))) {
+        if (auto* widget = item->widget()) {
+            delete widget;
+        }
+        delete item;
+    }
+
+    std::map<QString, std::vector<CaptureRecord>, std::greater<QString>> groups;
+    for (const auto& record : records_) {
+        if (!matchesFilter(record)) continue;
+        const QString ts = QString::fromStdString(record.timestamp);
+        groups[ts.left(10)].push_back(record);
+    }
+
+    if (groups.empty()) {
+        auto* empty = new QLabel(records_.empty()
+            ? "No captures yet - press Capture or 'C' in Live."
+            : "No captures match the current search.");
+        empty->setObjectName("SubtleText");
+        empty->setAlignment(Qt::AlignCenter);
+        empty->setMinimumHeight(320);
+        contentLayout_->addWidget(empty, 1);
+        return;
+    }
+
+    for (const auto& [day, dayRecords] : groups) {
+        auto* heading = new QLabel(dateHeading(day));
+        heading->setObjectName("DateHeading");
+        contentLayout_->addWidget(heading);
+
+        auto* groupWidget = new QWidget();
+        auto* flow = new FlowLayout(groupWidget, 0, 12, 12);
+        for (const auto& record : dayRecords) {
+            auto* card = new ThumbCard(record);
+            connect(card, &ThumbCard::activated, this, &GalleryPage::openDetail);
+            flow->addWidget(card);
+        }
+        contentLayout_->addWidget(groupWidget);
+    }
+    contentLayout_->addStretch();
+}
+
+void GalleryPage::openDetail(const QString& id)
+{
+    const auto it = std::find_if(records_.begin(), records_.end(), [&](const CaptureRecord& record) {
+        return QString::fromStdString(record.id) == id;
+    });
+    if (it == records_.end()) return;
+
+    const int index = static_cast<int>(std::distance(records_.begin(), it));
+    CaptureDetailDialog dialog(records_, index, this);
+    dialog.exec();
+}
+
+bool GalleryPage::matchesFilter(const CaptureRecord& record) const
+{
+    const QString needle = searchEdit_->text().trimmed();
+    if (needle.isEmpty()) return true;
+    const QString id = QString::fromStdString(record.id);
+    const QString timestamp = QString::fromStdString(record.timestamp);
+    return id.contains(needle, Qt::CaseInsensitive)
+        || timestamp.contains(needle, Qt::CaseInsensitive);
+}
+
+QString GalleryPage::dateHeading(const QString& timestamp) const
+{
+    const QDate date = QDate::fromString(timestamp.left(10), Qt::ISODate);
+    if (date.isValid() && date == QDate::currentDate()) {
+        return "Today";
+    }
+    return timestamp.isEmpty() ? "Unknown date" : timestamp.left(10);
+}
+
+} // namespace sgt::ui

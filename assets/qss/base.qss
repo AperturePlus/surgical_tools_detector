@@ -1,0 +1,143 @@
+* { font-family: "Microsoft YaHei", "Segoe UI", sans-serif; font-size: 14px; }
+
+QWidget {
+    background: {{bg}};
+    color: {{textPrimary}};
+}
+
+QMainWindow, QDialog { background: {{bg}}; }
+QWidget#AppRoot { background: {{bg}}; }
+
+QFrame#Sidebar {
+    background: {{elevated}};
+    border-right: 1px solid {{border}};
+}
+QLabel#BrandMark {
+    background: {{accent}};
+    color: #FFFFFF;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+QToolButton#NavButton {
+    background: transparent;
+    border: none;
+    color: {{textSecondary}};
+    padding: 10px 0;
+    border-radius: 8px;
+}
+QToolButton#NavButton:hover { background: {{surface}}; color: {{textPrimary}}; }
+QToolButton#NavButton:checked {
+    background: {{surface}};
+    color: {{accent}};
+    border-left: 3px solid {{accent}};
+}
+
+QFrame#Card {
+    background: {{surface}};
+    border: 1px solid {{border}};
+    border-radius: 10px;
+}
+QLabel#CardTitle { font-size: 13px; font-weight: 700; color: {{textSecondary}}; padding: 4px 2px 8px 2px; }
+
+QFrame#ControlRail { background: transparent; }
+QFrame#VideoStage { background: {{elevated}}; border-radius: 10px; }
+QFrame#LivePreview { background: transparent; border: none; }
+QLabel#VideoSurface { background: #000000; color: {{textSecondary}}; border-radius: 8px; font-size: 16px; }
+QWidget#HudOverlay { background: transparent; }
+QFrame#ModePillBar { background: transparent; }
+
+QFrame#StatusChip {
+    background: rgba(14,20,27,0.72);
+    color: {{textPrimary}};
+    border: 1px solid {{border}};
+    border-radius: 14px;
+    padding: 4px 12px;
+}
+QLabel#StatusChipText { background: transparent; color: {{textPrimary}}; }
+QLabel#StatusChipDot { background: transparent; color: {{accent}}; }
+
+QPushButton#ModePill {
+    background: rgba(14,20,27,0.72);
+    color: {{textSecondary}};
+    border: 1px solid {{border}};
+    border-radius: 14px;
+    padding: 6px 14px;
+}
+QPushButton#ModePill:hover { color: {{textPrimary}}; }
+QPushButton#ModePill:checked {
+    background: {{accent}};
+    color: #FFFFFF;
+    border-color: {{accent}};
+}
+
+QPushButton#CaptureFAB {
+    background: {{accent}};
+    color: #FFFFFF;
+    border: none;
+    border-radius: 24px;
+    font-weight: 700;
+    font-size: 14px;
+    padding: 8px 18px;
+}
+QPushButton#CaptureFAB:hover { background: {{accentHover}}; }
+
+QPushButton {
+    background: {{surface}};
+    color: {{textPrimary}};
+    border: 1px solid {{border}};
+    border-radius: 6px;
+    padding: 8px 14px;
+}
+QPushButton:hover { background: {{elevated}}; }
+QPushButton:disabled { color: {{textSecondary}}; }
+
+QLineEdit, QPlainTextEdit, QTableWidget, QListWidget, QScrollArea {
+    background: {{surface}};
+    color: {{textPrimary}};
+    border: 1px solid {{border}};
+    border-radius: 6px;
+    selection-background-color: {{accent}};
+}
+QTableWidget { gridline-color: {{border}}; }
+QTableWidget::item { padding: 4px 6px; }
+
+QHeaderView::section {
+    background: {{surface}};
+    color: {{textSecondary}};
+    border: none;
+    border-bottom: 1px solid {{border}};
+    padding: 6px 8px;
+    font-weight: 700;
+}
+
+QSlider::groove:horizontal { height: 6px; background: {{border}}; border-radius: 3px; }
+QSlider::handle:horizontal { background: {{accent}}; width: 18px; margin: -7px 0; border-radius: 9px; }
+QSlider::handle:horizontal:hover { background: {{accentHover}}; }
+
+QFrame#ThumbCard {
+    background: {{surface}};
+    border: 1px solid {{border}};
+    border-radius: 10px;
+}
+QFrame#ThumbCard:hover { border-color: {{accent}}; }
+QLabel#ThumbImage { background: {{elevated}}; border-top-left-radius: 9px; border-top-right-radius: 9px; }
+QLabel#ThumbMeta  { color: {{textSecondary}}; padding: 6px 10px; }
+QLabel#BadgeWarn  { color: {{warn}}; font-weight: 700; }
+QLabel#BadgeOk    { color: {{textSecondary}}; }
+
+QLabel#AppTitle { font-size: 22px; font-weight: 700; color: {{textPrimary}}; }
+QLabel#SubtleText { color: {{textSecondary}}; }
+QLabel#PanelTitle { font-size: 15px; font-weight: 700; color: {{textPrimary}}; }
+QLabel#DateHeading { font-size: 13px; font-weight: 700; color: {{textSecondary}}; padding: 12px 4px 6px 4px; }
+
+QToolButton {
+    background: {{surface}};
+    color: {{textPrimary}};
+    border: 1px solid {{border}};
+    border-radius: 6px;
+    padding: 6px;
+}
+QToolButton:hover { background: {{elevated}}; }
+QToolButton:checked { border-color: {{accent}}; }
