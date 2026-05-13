@@ -23,3 +23,5 @@ version/
 docs/*
 !docs/superpowers/
 !docs/superpowers/**
+
+.claude
