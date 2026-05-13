@@ -129,6 +129,7 @@ set(SGT_SOURCES
     ui/FlowLayout.cpp
     ui/GalleryPage.cpp
     ui/HudOverlay.cpp
+    ui/IconLoader.cpp
     ui/LivePage.cpp
     ui/LivePreviewWidget.cpp
     ui/ModePillBar.cpp
@@ -164,6 +165,7 @@ set(SGT_HEADERS
     ui/FlowLayout.h
     ui/GalleryPage.h
     ui/HudOverlay.h
+    ui/IconLoader.h
     ui/LivePage.h
     ui/LivePreviewWidget.h
     ui/ModePillBar.h
