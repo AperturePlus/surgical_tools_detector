@@ -145,3 +145,28 @@ QToolButton {
 }
 QToolButton:hover { background: {{elevated}}; }
 QToolButton:checked { border-color: {{accent}}; }
+
+QFrame#GalleryFilterBar { background: transparent; }
+
+QPushButton#FilterChip {
+    background: {{surface}};
+    color: {{textSecondary}};
+    border: 1px solid {{border}};
+    border-radius: 14px;
+    padding: 6px 14px;
+}
+QPushButton#FilterChip:hover    { color: {{textPrimary}}; }
+QPushButton#FilterChip:checked  {
+    background: {{accent}};
+    color: #FFFFFF;
+    border-color: {{accent}};
+}
+
+QDateEdit {
+    background: {{surface}};
+    color: {{textPrimary}};
+    border: 1px solid {{border}};
+    border-radius: 6px;
+    padding: 4px 8px;
+}
+QDateEdit::drop-down { width: 18px; border: none; }

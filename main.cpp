@@ -9,6 +9,7 @@
 
 #include <QApplication>
 
+#include "core/AppSettings.h"
 #include "core/CaptureStore.h"
 #include "core/DetectionPipeline.h"
 #include "ui/AppShell.h"
@@ -63,6 +64,7 @@ static sgt::ui::AppOptions parseArgs(int argc, char* argv[])
             throw std::runtime_error("unknown option: " + arg);
         } else if (!camSet) {
             opts.cameraId = std::atoi(arg.c_str());
+            opts.cameraIdFromCli = true;
             camSet = true;
         } else {
             throw std::runtime_error("unexpected argument: " + arg);
@@ -94,6 +96,13 @@ int main(int argc, char* argv[])
     QApplication app(argc, argv);
     sgt::ui::ThemeManager::instance().apply(&app);
 
+    sgt::AppSettings settings;
+    if (!opts.cameraIdFromCli) {
+        opts.cameraId = settings.cameraId();
+    }
+    opts.modeMask = settings.modeMask();
+    opts.thresholds = settings.defaultThresholds();
+
     fs::path exeDir = fs::path(argv[0]).parent_path();
     std::string toolPath = resolveAsset(exeDir, opts.toolModel);
     std::string graspPath = resolveAsset(exeDir, opts.graspModel);
@@ -101,7 +110,12 @@ int main(int argc, char* argv[])
     std::string dictPath = resolveAsset(exeDir, "labels.dict");
 
     auto engine = std::make_unique<sgt::DetectionEngine>(toolPath, graspPath, defectPath, dictPath);
-    auto store = std::make_unique<sgt::CaptureStore>(exeDir / "captures");
+
+    QString captureDirPref = settings.captureDir();
+    fs::path captureDir = captureDirPref.isEmpty()
+        ? (exeDir / "captures")
+        : fs::path(captureDirPref.toStdString());
+    auto store = std::make_unique<sgt::CaptureStore>(captureDir);
 
     sgt::ui::AppShell window(opts, std::move(engine), std::move(store));
     window.show();

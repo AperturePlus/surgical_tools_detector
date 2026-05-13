@@ -116,6 +116,7 @@ set(SGT_SOURCES
     api/ExportAPI.cpp
     api/ImageInputAPI.cpp
     classifier/OnnxDefectClassifier.cpp
+    core/AppSettings.cpp
     core/CaptureStore.cpp
     core/DetectionPipeline.cpp
     detector/YoloOnnxDetector.cpp
@@ -128,6 +129,7 @@ set(SGT_SOURCES
     ui/ControlPanel.cpp
     ui/FlowLayout.cpp
     ui/GalleryPage.cpp
+    ui/GalleryFilterBar.cpp
     ui/HudOverlay.cpp
     ui/IconLoader.cpp
     ui/LivePage.cpp
@@ -135,6 +137,7 @@ set(SGT_SOURCES
     ui/ModePillBar.cpp
     ui/QtImageUtils.cpp
     ui/Sidebar.cpp
+    ui/SettingsPage.cpp
     ui/StatusChip.cpp
     ui/Theme.cpp
     ui/ThemeManager.cpp
@@ -144,6 +147,7 @@ set(SGT_SOURCES
 set(SGT_HEADERS
     api/ExportAPI.h
     api/ImageInputAPI.h
+    core/AppSettings.h
     core/CaptureStore.h
     core/DefectResult.h
     core/Detection.h
@@ -164,6 +168,7 @@ set(SGT_HEADERS
     ui/ControlPanel.h
     ui/FlowLayout.h
     ui/GalleryPage.h
+    ui/GalleryFilterBar.h
     ui/HudOverlay.h
     ui/IconLoader.h
     ui/LivePage.h
@@ -171,6 +176,7 @@ set(SGT_HEADERS
     ui/ModePillBar.h
     ui/QtImageUtils.h
     ui/Sidebar.h
+    ui/SettingsPage.h
     ui/StatusChip.h
     ui/Theme.h
     ui/ThemeManager.h
@@ -223,10 +229,18 @@ add_executable(ThumbnailCacheSmoke
 target_include_directories(ThumbnailCacheSmoke PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(ThumbnailCacheSmoke PRIVATE ${OpenCV_LIBS} Qt6::Widgets)
 
+add_executable(AppSettingsSmoke
+    tests/AppSettingsSmoke.cpp
+    core/AppSettings.cpp
+)
+target_include_directories(AppSettingsSmoke PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(AppSettingsSmoke PRIVATE Qt6::Core ${OpenCV_LIBS})
+
 enable_testing()
 add_test(NAME CaptureStoreSmoke COMMAND CaptureStoreSmoke)
 add_test(NAME ThemeSmoke COMMAND ThemeSmoke)
 add_test(NAME ThumbnailCacheSmoke COMMAND ThumbnailCacheSmoke)
+add_test(NAME AppSettingsSmoke COMMAND AppSettingsSmoke)
 
 # ── Feature compile definitions ───────────────────────────────────────────────
 if(WITH_CUDA)

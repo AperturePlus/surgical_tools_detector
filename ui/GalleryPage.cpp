@@ -17,6 +17,7 @@
 
 #include "ui/CaptureDetailDialog.h"
 #include "ui/FlowLayout.h"
+#include "ui/GalleryFilterBar.h"
 #include "ui/ThumbCard.h"
 
 namespace sgt::ui {
@@ -50,6 +51,15 @@ GalleryPage::GalleryPage(QWidget* parent)
     header->addWidget(exportButton);
     header->addWidget(overflow);
     root->addLayout(header);
+
+    filterBar_ = new GalleryFilterBar();
+    root->addWidget(filterBar_);
+    connect(filterBar_, &GalleryFilterBar::rangeChanged, this,
+            [this](QDate from, QDate to) {
+                filterFrom_ = from;
+                filterTo_ = to;
+                rebuild();
+            });
 
     auto* scroll = new QScrollArea();
     scroll->setWidgetResizable(true);
@@ -147,12 +157,28 @@ void GalleryPage::openDetail(const QString& id)
 
 bool GalleryPage::matchesFilter(const CaptureRecord& record) const
 {
+    return matchesSearch(record) && matchesDateRange(record);
+}
+
+bool GalleryPage::matchesSearch(const CaptureRecord& record) const
+{
     const QString needle = searchEdit_->text().trimmed();
     if (needle.isEmpty()) return true;
     const QString id = QString::fromStdString(record.id);
     const QString timestamp = QString::fromStdString(record.timestamp);
     return id.contains(needle, Qt::CaseInsensitive)
         || timestamp.contains(needle, Qt::CaseInsensitive);
+}
+
+bool GalleryPage::matchesDateRange(const CaptureRecord& record) const
+{
+    if (!filterFrom_.isValid() && !filterTo_.isValid()) return true;
+    const QDate captureDay = QDate::fromString(
+        QString::fromStdString(record.timestamp).left(10), Qt::ISODate);
+    if (!captureDay.isValid()) return false;
+    if (filterFrom_.isValid() && captureDay < filterFrom_) return false;
+    if (filterTo_.isValid()   && captureDay > filterTo_)   return false;
+    return true;
 }
 
 QString GalleryPage::dateHeading(const QString& timestamp) const

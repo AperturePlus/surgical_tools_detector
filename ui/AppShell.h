@@ -24,7 +24,9 @@ namespace sgt::ui {
 
 struct AppOptions {
     int cameraId = 0;
+    bool cameraIdFromCli = false;       // CLI numeric arg sets this true
     uint8_t modeMask = MODE_TOOL;
+    DetectionThresholds thresholds;     // seeded from AppSettings::defaultThresholds()
     std::string toolModel;
     std::string graspModel;
     std::string defectModel;
@@ -32,6 +34,7 @@ struct AppOptions {
 
 class GalleryPage;
 class LivePage;
+class SettingsPage;
 class Sidebar;
 
 class AppShell final : public QMainWindow {
@@ -60,6 +63,7 @@ private:
     QStackedWidget* stack_ = nullptr;
     LivePage* livePage_ = nullptr;
     GalleryPage* galleryPage_ = nullptr;
+    SettingsPage* settingsPage_ = nullptr;
 
     void buildUi();
     void wireEvents();
