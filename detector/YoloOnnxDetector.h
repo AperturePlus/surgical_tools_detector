@@ -28,13 +28,14 @@ public:
     /// @param labels      Optional LabelProvider for class name resolution.
     YoloOnnxDetector(const std::string&   modelPath,
                      int                  inputSize  = 640,
-                     float                confThresh = 0.25f,
+                     float                confThresh = 0.65f,
                      float                nmsThresh  = 0.45f,
                      const LabelProvider* labels     = nullptr);
 
     ~YoloOnnxDetector() override = default;
 
     std::vector<Detection> detect(const cv::Mat& frame) override;
+    PerfStats lastPerfStats() const override { return lastPerf_; }
 
     float getConfThresh() const override { return confThresh_; }
     void  setConfThresh(float t) override {
@@ -58,15 +59,20 @@ private:
     std::string          inputName_;
     std::string          outputName_;
     std::vector<int64_t> inputShape_;   // [1, 3, H, W]
+    ONNXTensorElementDataType inputElementType_  = ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT;
+    ONNXTensorElementDataType outputElementType_ = ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT;
 
     const LabelProvider* labels_;       // non-owning, may be null
 
     // ── Helpers ────────────────────────────────────────────────────────────
-    /// Letterbox-resize to inputSize×inputSize; returns pre-processed 4D blob.
-    cv::Mat preprocess(const cv::Mat& frame,
-                       float&         outScale,
-                       int&           outPadLeft,
-                       int&           outPadTop) const;
+    /// Letterbox-resize to inputSize×inputSize.
+    void preprocess(const cv::Mat& frame,
+                    float&         outScale,
+                    int&           outPadLeft,
+                    int&           outPadTop);
+
+    float* fillInputTensorFloat();
+    Ort::Float16_t* fillInputTensorFloat16();
 
     /// Parse the raw output tensor [4+nc, anchors] into Detection objects.
     std::vector<Detection> postprocess(const float*    data,
@@ -74,7 +80,23 @@ private:
                                        const cv::Size& origSize,
                                        float           scale,
                                        int             padLeft,
-                                       int             padTop) const;
+                                       int             padTop);
+    std::vector<Detection> postprocess(const Ort::Float16_t* data,
+                                       int                   anchors,
+                                       const cv::Size&       origSize,
+                                       float                 scale,
+                                       int                   padLeft,
+                                       int                   padTop);
+
+    cv::Mat resized_;
+    cv::Mat padded_;
+    std::vector<float> inputFp32_;
+    std::vector<Ort::Float16_t> inputFp16_;
+    std::vector<cv::Rect> boxes_;
+    std::vector<float> scores_;
+    std::vector<int> classIds_;
+    std::vector<int> nmsIndices_;
+    PerfStats lastPerf_;
 };
 
 } // namespace sgt

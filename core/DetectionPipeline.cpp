@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <array>
+#include <chrono>
 #include <cmath>
 #include <iomanip>
 #include <sstream>
@@ -18,6 +19,13 @@
 namespace sgt {
 
 namespace {
+
+using Clock = std::chrono::steady_clock;
+
+double elapsedMs(Clock::time_point start, Clock::time_point end = Clock::now())
+{
+    return std::chrono::duration<double, std::milli>(end - start).count();
+}
 
 const std::vector<std::string> TOOL_CLASSES = {
     "cefangkaikouqi","guqian","gujian","gudao","xianjian","yating",
@@ -172,9 +180,11 @@ DetectionFrameResult DetectionEngine::process(const cv::Mat& frame, uint8_t mode
 
     if ((modeMask & MODE_TOOL) && ensureLoaded(MODE_TOOL)) {
         result.toolDetections = toolDet_->detect(frame);
+        result.perf += toolDet_->lastPerfStats();
     }
     if ((modeMask & MODE_GRASP) && ensureLoaded(MODE_GRASP)) {
         result.graspDetections = graspDet_->detect(frame);
+        result.perf += graspDet_->lastPerfStats();
     }
     if ((modeMask & MODE_DEFECT) && ensureLoaded(MODE_DEFECT)) {
         Detection full;
@@ -183,10 +193,12 @@ DetectionFrameResult DetectionEngine::process(const cv::Mat& frame, uint8_t mode
     }
 
     result.thresholds = thresholds();
+    auto annotateStart = Clock::now();
     result.annotatedFrame = annotator_.annotate(frame,
                                                 result.toolDetections,
                                                 result.graspDetections,
                                                 result.defectResults);
+    result.perf.annotateMs = elapsedMs(annotateStart);
     return result;
 }
 

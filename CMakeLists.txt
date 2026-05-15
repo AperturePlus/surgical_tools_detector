@@ -15,12 +15,12 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 #
 # Model assets
 # ───────────
-# Runtime ONNX models live in assets/models/. The surgical tool detector can
-# be exported from assets/models/cat.pt before building:
+# Runtime ONNX models live in assets/models/. The inventory detector can
+# be exported from its training checkpoint before building:
 #
 #   python scripts/export_model.py --model assets/models/cat.pt --backend cpu --output-dir assets/models
 #
-# Rename the exported best.onnx to surgical_tool_detector_yolov8_640.onnx.
+# Rename the exported ONNX to inventory_detection.onnx.
 # Override model filenames with SGT_TOOL_MODEL_ASSET, SGT_GRASP_MODEL_ASSET,
 # and SGT_DEFECT_MODEL_ASSET if needed.
 # ─────────────────────────────────────────────────────────────────────────────
@@ -30,8 +30,14 @@ option(WITH_DIRECTML "Enable DirectML Execution Provider for ONNX Runtime" OFF)
 option(SGT_RUN_WINDEPLOYQT "Run windeployqt6 after build"                  ON)
 
 # Runtime model filenames to copy next to the executable.
-set(SGT_TOOL_MODEL_ASSET "surgical_tool_detector_yolov8_640.onnx" CACHE STRING
-    "Surgical tool detector ONNX filename in assets/models/")
+set(_SGT_LEGACY_TOOL_MODEL_ASSET "surgical_tool_detector_yolov8_640.onnx")
+if(DEFINED SGT_TOOL_MODEL_ASSET AND SGT_TOOL_MODEL_ASSET STREQUAL _SGT_LEGACY_TOOL_MODEL_ASSET)
+    set(SGT_TOOL_MODEL_ASSET "inventory_detection.onnx" CACHE STRING
+        "Inventory detector ONNX filename in assets/models/" FORCE)
+else()
+    set(SGT_TOOL_MODEL_ASSET "inventory_detection.onnx" CACHE STRING
+        "Inventory detector ONNX filename in assets/models/")
+endif()
 set(SGT_GRASP_MODEL_ASSET "grasp_state_detector_yolov8_640.onnx" CACHE STRING
     "Grasp/work detector ONNX filename in assets/models/")
 set(SGT_DEFECT_MODEL_ASSET "tool_defect_classifier_resnet_512_b4.onnx" CACHE STRING
@@ -155,6 +161,7 @@ set(SGT_HEADERS
     core/DetectionPipeline.h
     core/DetectorBackend.h
     core/LabelProvider.h
+    core/PerfStats.h
     core/Renderer.h
     core/FontRenderer.h
     classifier/OnnxDefectClassifier.h

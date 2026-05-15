@@ -5,7 +5,7 @@
 namespace sgt {
 
 struct DetectionThresholds {
-    float tool   = 0.25f;
+    float tool   = 0.65f;
     float grasp  = 0.25f;
     float defect = 0.50f;
 };

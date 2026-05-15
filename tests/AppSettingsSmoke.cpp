@@ -5,7 +5,7 @@
 #include <QFile>
 #include <QSettings>
 #include <QString>
-#include <QTemporaryFile>
+#include <QTemporaryDir>
 
 #include "core/AppSettings.h"
 #include "core/DetectionMetadata.h"
@@ -31,10 +31,9 @@ int main(int argc, char* argv[])
 {
     QCoreApplication app(argc, argv);
 
-    QTemporaryFile tmp;
-    if (!tmp.open()) { std::cerr << "tmp file failed\n"; return 1; }
-    const QString path = tmp.fileName();
-    tmp.close();
+    QTemporaryDir tmp;
+    if (!tmp.isValid()) { std::cerr << "tmp dir failed\n"; return 1; }
+    const QString path = tmp.filePath("settings.ini");
 
     // Round-trip: write everything, reopen, read back.
     {
@@ -65,7 +64,7 @@ int main(int argc, char* argv[])
         CHECK(s.captureDir() == "D:/captures", "captureDir survives reset");
         CHECK(s.modeMask() == sgt::MODE_TOOL, "modeMask resets to TOOL");
         const auto t = s.defaultThresholds();
-        CHECK(nearly(t.tool,   0.25f), "tool threshold resets to factory");
+        CHECK(nearly(t.tool,   0.65f), "tool threshold resets to factory");
         CHECK(nearly(t.grasp,  0.25f), "grasp threshold resets to factory");
         CHECK(nearly(t.defect, 0.50f), "defect threshold resets to factory");
     }

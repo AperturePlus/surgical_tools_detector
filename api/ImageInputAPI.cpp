@@ -32,7 +32,7 @@ void ImageInputAPI::ensureLoaded(uint8_t bit) {
     if (bit == MODE_TOOL && !toolDet_) {
         if (!toolLabels_)
             toolLabels_ = std::make_unique<DictLabelProvider>(dictPath_, TOOL_CLASSES);
-        toolDet_ = std::make_unique<YoloOnnxDetector>(toolPath_, 640, 0.25f, 0.45f, toolLabels_.get());
+        toolDet_ = std::make_unique<YoloOnnxDetector>(toolPath_, 640, 0.65f, 0.45f, toolLabels_.get());
     }
     if (bit == MODE_GRASP && !graspDet_) {
         if (!graspLabels_)

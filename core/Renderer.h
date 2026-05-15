@@ -20,7 +20,7 @@ enum ModeMask : uint8_t {
 struct HUDData {
     uint8_t activeModes    = MODE_TOOL;
     float fps              = 0.0f;
-    float toolConfThresh   = 0.25f;
+    float toolConfThresh   = 0.65f;
     float graspConfThresh  = 0.25f;
     float defectThresh     = 0.50f;
     int   toolDetections   = 0;

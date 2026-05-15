@@ -17,7 +17,7 @@
 
 namespace fs = std::filesystem;
 
-static constexpr const char* DEFAULT_TOOL_MODEL = "surgical_tool_detector_yolov8_640.onnx";
+static constexpr const char* DEFAULT_TOOL_MODEL = "inventory_detection.onnx";
 static constexpr const char* DEFAULT_GRASP_MODEL = "grasp_state_detector_yolov8_640.onnx";
 static constexpr const char* DEFAULT_DEFECT_MODEL = "tool_defect_classifier_resnet_512_b4.onnx";
 

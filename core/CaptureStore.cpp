@@ -211,9 +211,10 @@ void CaptureStore::loadExisting()
         record.toolCount = matchInt(text, "toolCount");
         record.graspCount = matchInt(text, "graspCount");
         record.defectCount = matchInt(text, "defectCount");
-        record.thresholds.tool = matchFloat(text, "tool", 0.25f);
-        record.thresholds.grasp = matchFloat(text, "grasp", 0.25f);
-        record.thresholds.defect = matchFloat(text, "defect", 0.50f);
+        const DetectionThresholds fallbackThresholds;
+        record.thresholds.tool = matchFloat(text, "tool", fallbackThresholds.tool);
+        record.thresholds.grasp = matchFloat(text, "grasp", fallbackThresholds.grasp);
+        record.thresholds.defect = matchFloat(text, "defect", fallbackThresholds.defect);
         record.jsonPath = entry.path().string();
 
         fs::path dir = entry.path().parent_path();

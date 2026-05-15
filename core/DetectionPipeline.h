@@ -10,6 +10,7 @@
 #include "core/Detection.h"
 #include "core/DetectionMetadata.h"
 #include "core/DefectResult.h"
+#include "core/PerfStats.h"
 #include "core/Renderer.h"
 
 namespace sgt {
@@ -26,6 +27,7 @@ struct DetectionFrameResult {
     std::vector<DefectResult> defectResults;
     uint8_t activeModes = MODE_TOOL;
     DetectionThresholds thresholds;
+    PerfStats perf;
     float fps = 0.0f;
 
     int defectCount() const;

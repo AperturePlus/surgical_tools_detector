@@ -52,7 +52,7 @@ void AppSettings::setModeMask(uint8_t mask)
 
 DetectionThresholds AppSettings::defaultThresholds() const
 {
-    DetectionThresholds factory;  // 0.25 / 0.25 / 0.50
+    DetectionThresholds factory;  // 0.65 / 0.25 / 0.50
     DetectionThresholds out;
     out.tool   = static_cast<float>(settings_->value(kThresholdTool,  factory.tool ).toDouble());
     out.grasp  = static_cast<float>(settings_->value(kThresholdGrasp, factory.grasp).toDouble());

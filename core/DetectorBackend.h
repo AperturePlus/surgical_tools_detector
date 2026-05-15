@@ -3,6 +3,7 @@
 #include <vector>
 #include <opencv2/core.hpp>
 #include "Detection.h"
+#include "core/PerfStats.h"
 
 namespace sgt {
 
@@ -17,6 +18,9 @@ public:
 
     /// Run inference on a BGR frame; return detections in frame coordinates.
     virtual std::vector<Detection> detect(const cv::Mat& frame) = 0;
+
+    /// Timing for the most recent detect() call. Empty unless the backend records it.
+    virtual PerfStats lastPerfStats() const { return {}; }
 
     /// Confidence threshold currently in use.
     virtual float getConfThresh() const = 0;
