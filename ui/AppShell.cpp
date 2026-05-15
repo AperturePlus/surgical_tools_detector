@@ -1,6 +1,11 @@
 #include "ui/AppShell.h"
 
+#include <chrono>
+#include <cstdlib>
 #include <exception>
+#include <iomanip>
+#include <iostream>
+#include <string>
 
 #include <QHBoxLayout>
 #include <QMessageBox>
@@ -17,6 +22,25 @@
 
 namespace sgt::ui {
 
+namespace {
+
+using Clock = std::chrono::steady_clock;
+
+double elapsedMs(Clock::time_point start, Clock::time_point end = Clock::now())
+{
+    return std::chrono::duration<double, std::milli>(end - start).count();
+}
+
+bool profileEnabledFromEnv()
+{
+    const char* raw = std::getenv("SGT_PROFILE");
+    if (!raw) return false;
+    const std::string value(raw);
+    return !value.empty() && value != "0" && value != "false" && value != "FALSE";
+}
+
+} // namespace
+
 AppShell::AppShell(AppOptions opts,
                    std::unique_ptr<DetectionEngine> engine,
                    std::unique_ptr<CaptureStore> store,
@@ -27,8 +51,12 @@ AppShell::AppShell(AppOptions opts,
     , store_(std::move(store))
     , activeMask_(opts_.modeMask ? opts_.modeMask : MODE_TOOL)
     , thresholds_(opts_.thresholds)
+    , profileEnabled_(profileEnabledFromEnv())
 {
     engine_->setThresholds(thresholds_);
+    if (profileEnabled_) {
+        std::cout << "[SGT_PROFILE] enabled; reporting 60-frame averages.\n";
+    }
     buildUi();
     wireEvents();
     startCamera();
@@ -113,14 +141,22 @@ void AppShell::processFrame()
 {
     if (!cap_.isOpened()) return;
 
+    auto totalStart = Clock::now();
+    auto readStart = Clock::now();
     cv::Mat frame;
     if (!cap_.read(frame) || frame.empty()) return;
+    const double cameraReadMs = elapsedMs(readStart);
 
     try {
         lastResult_ = engine_->process(frame, activeMask_);
+        lastResult_.perf.cameraReadMs = cameraReadMs;
         updateFps();
         lastResult_.fps = fps_;
-        livePage_->setFrameResult(lastResult_, activeMask_);
+        PerfStats uiPerf = livePage_->setFrameResult(lastResult_, activeMask_);
+        lastResult_.perf.qtImageMs = uiPerf.qtImageMs;
+        lastResult_.perf.qtScaleDisplayMs = uiPerf.qtScaleDisplayMs;
+        lastResult_.perf.totalFrameMs = elapsedMs(totalStart);
+        recordProfile(lastResult_.perf);
     } catch (const std::exception& e) {
         statusBar()->showMessage("Inference error: " + QString::fromLocal8Bit(e.what()), 3000);
     }
@@ -138,6 +174,36 @@ void AppShell::updateFps()
     }
     lastFrameTime_ = now;
     livePage_->setFps(fps_);
+}
+
+void AppShell::recordProfile(const PerfStats& perf)
+{
+    if (!profileEnabled_) return;
+
+    profileTotals_ += perf;
+    ++profileFrameCount_;
+    if (profileFrameCount_ < 60) return;
+
+    const PerfStats avg = averagePerfStats(profileTotals_, profileFrameCount_);
+    const double avgFps = avg.totalFrameMs > 0.0 ? 1000.0 / avg.totalFrameMs : 0.0;
+
+    std::cout << std::fixed << std::setprecision(2)
+              << "[SGT_PROFILE] avg " << profileFrameCount_ << " frames"
+              << " fps=" << avgFps
+              << " total=" << avg.totalFrameMs << "ms"
+              << " camera=" << avg.cameraReadMs << "ms"
+              << " preprocess=" << avg.preprocessMs << "ms"
+              << " input_cast=" << avg.inputCastMs << "ms"
+              << " ort=" << avg.ortRunMs << "ms"
+              << " output_cast=" << avg.outputCastMs << "ms"
+              << " postprocess=" << avg.postprocessMs << "ms"
+              << " annotate=" << avg.annotateMs << "ms"
+              << " qt_image=" << avg.qtImageMs << "ms"
+              << " qt_scale_display=" << avg.qtScaleDisplayMs << "ms"
+              << "\n";
+
+    profileTotals_ = {};
+    profileFrameCount_ = 0;
 }
 
 void AppShell::captureCurrent()

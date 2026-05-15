@@ -6,6 +6,7 @@
 #include <QPixmap>
 
 #include "core/DetectionPipeline.h"
+#include "core/PerfStats.h"
 
 class QLabel;
 class QResizeEvent;
@@ -18,7 +19,7 @@ class LivePreviewWidget final : public QFrame {
 public:
     explicit LivePreviewWidget(QWidget* parent = nullptr);
 
-    void setResult(const DetectionFrameResult& result, uint8_t activeMask);
+    PerfStats setResult(const DetectionFrameResult& result, uint8_t activeMask);
 
 protected:
     void resizeEvent(QResizeEvent* event) override;
@@ -27,7 +28,7 @@ private:
     QLabel* videoLabel_ = nullptr;
     QPixmap currentPixmap_;
 
-    void updatePixmap();
+    double updatePixmap();
 };
 
 } // namespace sgt::ui

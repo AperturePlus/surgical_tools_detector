@@ -3,6 +3,7 @@
 #include <cstdint>
 
 #include <QFrame>
+#include <QElapsedTimer>
 
 #include "core/DetectionMetadata.h"
 #include "core/DetectionPipeline.h"
@@ -50,6 +51,7 @@ private:
     QLabel* graspModelLabel_ = nullptr;
     QLabel* defectModelLabel_ = nullptr;
     QTableWidget* resultTable_ = nullptr;
+    QElapsedTimer tableUpdateTimer_;
 
     QSlider* makeSlider(float value, QLabel*& label, const QString& name);
     QWidget* makeSliderRow(QSlider* slider, QLabel* label);

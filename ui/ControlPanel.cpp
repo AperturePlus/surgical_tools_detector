@@ -144,6 +144,15 @@ uint8_t ControlPanel::modeMask() const
 
 void ControlPanel::setFrameResult(const DetectionFrameResult& result)
 {
+    if (tableUpdateTimer_.isValid() && tableUpdateTimer_.elapsed() < 200) {
+        return;
+    }
+    if (tableUpdateTimer_.isValid()) {
+        tableUpdateTimer_.restart();
+    } else {
+        tableUpdateTimer_.start();
+    }
+
     const int rows = static_cast<int>(result.toolDetections.size()
         + result.graspDetections.size()
         + result.defectResults.size());

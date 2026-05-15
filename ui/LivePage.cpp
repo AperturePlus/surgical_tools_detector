@@ -54,12 +54,13 @@ LivePage::LivePage(uint8_t initialModeMask,
     connect(controlPanel_, &ControlPanel::thresholdsChanged, this, &LivePage::thresholdsChanged);
 }
 
-void LivePage::setFrameResult(const DetectionFrameResult& result, uint8_t activeMask)
+PerfStats LivePage::setFrameResult(const DetectionFrameResult& result, uint8_t activeMask)
 {
-    preview_->setResult(result, activeMask);
+    PerfStats perf = preview_->setResult(result, activeMask);
     controlPanel_->setFrameResult(result);
     hud_->setModeMask(activeMask);
     hud_->setFrameSummary(result);
+    return perf;
 }
 
 void LivePage::setCameraStatus(const QString& text)

@@ -21,7 +21,7 @@ public:
                       const DetectionThresholds& initialThresholds,
                       QWidget* parent = nullptr);
 
-    void setFrameResult(const DetectionFrameResult& result, uint8_t activeMask);
+    PerfStats setFrameResult(const DetectionFrameResult& result, uint8_t activeMask);
     void setCameraStatus(const QString& text);
     void setFps(float fps);
     void setModels(const ModelInfo& models);

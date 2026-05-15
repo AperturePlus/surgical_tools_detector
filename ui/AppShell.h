@@ -58,6 +58,9 @@ private:
     QTimer timer_;
     QDateTime lastFrameTime_;
     float fps_ = 0.0f;
+    bool profileEnabled_ = false;
+    int profileFrameCount_ = 0;
+    PerfStats profileTotals_;
 
     Sidebar* sidebar_ = nullptr;
     QStackedWidget* stack_ = nullptr;
@@ -70,6 +73,7 @@ private:
     void startCamera();
     void processFrame();
     void updateFps();
+    void recordProfile(const PerfStats& perf);
     void captureCurrent();
 };
 
