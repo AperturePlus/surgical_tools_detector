@@ -38,8 +38,14 @@ else()
     set(SGT_TOOL_MODEL_ASSET "inventory_detection.onnx" CACHE STRING
         "Inventory detector ONNX filename in assets/models/")
 endif()
-set(SGT_GRASP_MODEL_ASSET "grasp_state_detector_yolov8_640.onnx" CACHE STRING
-    "Grasp/work detector ONNX filename in assets/models/")
+set(_SGT_LEGACY_GRASP_MODEL_ASSET "grasp_state_detector_yolov8_640.onnx")
+if(DEFINED SGT_GRASP_MODEL_ASSET AND SGT_GRASP_MODEL_ASSET STREQUAL _SGT_LEGACY_GRASP_MODEL_ASSET)
+    set(SGT_GRASP_MODEL_ASSET "instrument_endpoint_detection.onnx" CACHE STRING
+        "Grasp/work detector ONNX filename in assets/models/" FORCE)
+else()
+    set(SGT_GRASP_MODEL_ASSET "instrument_endpoint_detection.onnx" CACHE STRING
+        "Grasp/work detector ONNX filename in assets/models/")
+endif()
 set(SGT_DEFECT_MODEL_ASSET "tool_defect_classifier_resnet_512_b4.onnx" CACHE STRING
     "Tool defect classifier ONNX filename in assets/models/")
 set(SGT_RUNTIME_MODELS

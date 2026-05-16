@@ -18,7 +18,7 @@
 namespace fs = std::filesystem;
 
 static constexpr const char* DEFAULT_TOOL_MODEL = "inventory_detection.onnx";
-static constexpr const char* DEFAULT_GRASP_MODEL = "grasp_state_detector_yolov8_640.onnx";
+static constexpr const char* DEFAULT_GRASP_MODEL = "instrument_endpoint_detection.onnx";
 static constexpr const char* DEFAULT_DEFECT_MODEL = "tool_defect_classifier_resnet_512_b4.onnx";
 
 static uint8_t parseMode(const std::string& raw)
