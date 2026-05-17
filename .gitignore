@@ -25,3 +25,5 @@ docs/*
 !docs/superpowers/**
 
 .claude
+
+.vs/
