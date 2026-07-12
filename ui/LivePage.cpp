@@ -23,7 +23,7 @@ LivePage::LivePage(uint8_t initialModeMask,
 
     auto* splitter = new QSplitter(Qt::Horizontal);
     splitter->setChildrenCollapsible(false);
-    splitter->setHandleWidth(12);
+    splitter->setHandleWidth(8);
 
     auto* videoStage = new QFrame();
     videoStage->setObjectName("VideoStage");

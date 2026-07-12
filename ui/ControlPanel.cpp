@@ -59,7 +59,7 @@ ControlPanel::ControlPanel(uint8_t initialModeMask,
 
     auto* layout = new QVBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
-    layout->setSpacing(12);
+    layout->setSpacing(10);
 
     auto* thresholdsCard = new Card("Thresholds");
     toolSlider_ = makeSlider(thresholds_.tool, toolThresholdLabel_, "Tool");

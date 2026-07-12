@@ -14,6 +14,7 @@ class QVBoxLayout;
 namespace xcwj::ui {
 
 class GalleryFilterBar;
+class StatusChip;
 
 class GalleryPage final : public QWidget {
     Q_OBJECT
@@ -29,6 +30,7 @@ private:
     QLabel* titleLabel_ = nullptr;
     QLineEdit* searchEdit_ = nullptr;
     GalleryFilterBar* filterBar_ = nullptr;
+    StatusChip* countChip_ = nullptr;
     QWidget* content_ = nullptr;
     QVBoxLayout* contentLayout_ = nullptr;
     QDate filterFrom_;

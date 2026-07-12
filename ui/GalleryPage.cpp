@@ -12,12 +12,14 @@
 #include <QLineEdit>
 #include <QPushButton>
 #include <QScrollArea>
-#include <QToolButton>
 #include <QVBoxLayout>
 
 #include "ui/CaptureDetailDialog.h"
 #include "ui/FlowLayout.h"
 #include "ui/GalleryFilterBar.h"
+#include "ui/IconLoader.h"
+#include "ui/StatusChip.h"
+#include "ui/ThemeManager.h"
 #include "ui/ThumbCard.h"
 
 namespace xcwj::ui {
@@ -31,9 +33,14 @@ GalleryPage::GalleryPage(QWidget* parent)
 
     auto* header = new QHBoxLayout();
     header->setSpacing(10);
-    titleLabel_ = new QLabel("Captures - 0");
+    titleLabel_ = new QLabel("Captures");
     titleLabel_->setObjectName("AppTitle");
     header->addWidget(titleLabel_);
+
+    countChip_ = new StatusChip("0");
+    countChip_->setDotColor(ThemeManager::instance().tokens().accent);
+    header->addWidget(countChip_);
+    header->addSpacing(6);
 
     searchEdit_ = new QLineEdit();
     searchEdit_->setPlaceholderText("Search id or date");
@@ -42,14 +49,10 @@ GalleryPage::GalleryPage(QWidget* parent)
     header->addStretch();
 
     auto* exportButton = new QPushButton("Export all...");
+    exportButton->setObjectName("Secondary");
     exportButton->setEnabled(false);
     exportButton->setToolTip("Export is planned for a later phase.");
-    auto* overflow = new QToolButton();
-    overflow->setText("...");
-    overflow->setEnabled(false);
-    overflow->setToolTip("More gallery actions are planned for a later phase.");
     header->addWidget(exportButton);
-    header->addWidget(overflow);
     root->addLayout(header);
 
     filterBar_ = new GalleryFilterBar();
@@ -98,7 +101,8 @@ void GalleryPage::addRecord(const CaptureRecord& record)
 
 void GalleryPage::rebuild()
 {
-    titleLabel_->setText(QString("Captures - %1").arg(records_.size()));
+    titleLabel_->setText("Captures");
+    countChip_->setText(QString::number(records_.size()));
 
     QLayoutItem* item = nullptr;
     while ((item = contentLayout_->takeAt(0))) {
@@ -116,11 +120,26 @@ void GalleryPage::rebuild()
     }
 
     if (groups.empty()) {
-        auto* empty = new QLabel(records_.empty()
-            ? "No captures yet - press Capture or 'C' in Live."
-            : "No captures match the current search.");
-        empty->setObjectName("SubtleText");
-        empty->setAlignment(Qt::AlignCenter);
+        auto* empty = new QWidget();
+        auto* emptyLayout = new QVBoxLayout(empty);
+        emptyLayout->setAlignment(Qt::AlignCenter);
+        emptyLayout->setSpacing(8);
+        const bool noCaptures = records_.empty();
+        const auto& tokens = ThemeManager::instance().tokens();
+        auto* icon = new QLabel();
+        icon->setPixmap(IconLoader::load("nav-gallery", tokens.textSecondary, QSize(32, 32)).pixmap(QSize(32, 32)));
+        icon->setAlignment(Qt::AlignCenter);
+        auto* primary = new QLabel(noCaptures ? "No captures yet" : "No matches");
+        primary->setObjectName("PanelTitle");
+        primary->setAlignment(Qt::AlignCenter);
+        auto* secondary = new QLabel(noCaptures
+            ? "Press Capture or 'C' in Live."
+            : "Try a different search or date range.");
+        secondary->setObjectName("SubtleText");
+        secondary->setAlignment(Qt::AlignCenter);
+        emptyLayout->addWidget(icon);
+        emptyLayout->addWidget(primary);
+        emptyLayout->addWidget(secondary);
         empty->setMinimumHeight(320);
         contentLayout_->addWidget(empty, 1);
         return;
