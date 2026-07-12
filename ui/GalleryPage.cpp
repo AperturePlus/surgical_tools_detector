@@ -42,6 +42,10 @@ GalleryPage::GalleryPage(QWidget* parent)
     header->addWidget(countChip_);
     header->addSpacing(6);
 
+    connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this, [this](const ThemeTokens& t) {
+        countChip_->setDotColor(t.accent);
+    });
+
     searchEdit_ = new QLineEdit();
     searchEdit_->setPlaceholderText("Search id or date");
     searchEdit_->setMinimumWidth(260);
