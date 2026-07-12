@@ -8,6 +8,7 @@
 #include "ui/CaptureFAB.h"
 #include "ui/ModePillBar.h"
 #include "ui/StatusChip.h"
+#include "ui/ThemeManager.h"
 
 namespace xcwj::ui {
 
@@ -26,6 +27,7 @@ HudOverlay::HudOverlay(uint8_t initialModeMask, QWidget* parent)
     top->setSpacing(8);
     cameraChip_ = new StatusChip("Camera starting");
     fpsChip_ = new StatusChip("FPS 0.0");
+    fpsChip_->setDotColor(ThemeManager::instance().tokens().info);
     modePillBar_ = new ModePillBar(initialModeMask);
     top->addWidget(cameraChip_);
     top->addWidget(fpsChip_);
@@ -43,11 +45,25 @@ HudOverlay::HudOverlay(uint8_t initialModeMask, QWidget* parent)
 
     connect(modePillBar_, &ModePillBar::toggleMode, this, &HudOverlay::toggleMode);
     connect(captureButton_, &QPushButton::clicked, this, &HudOverlay::captureRequested);
+
+    connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this, [this]() {
+        const auto& t = ThemeManager::instance().tokens();
+        fpsChip_->setDotColor(t.info);
+        const QString camColor = lastCameraStatus_.contains("unavailable", Qt::CaseInsensitive)
+            ? t.danger : t.accent;
+        cameraChip_->setDotColor(camColor);
+    });
 }
 
 void HudOverlay::setCameraStatus(const QString& text)
 {
+    lastCameraStatus_ = text;
     cameraChip_->setText(text);
+    const auto& tokens = ThemeManager::instance().tokens();
+    const QString color = text.contains("unavailable", Qt::CaseInsensitive)
+        ? tokens.danger
+        : tokens.accent;
+    cameraChip_->setDotColor(color);
 }
 
 void HudOverlay::setFps(float fps)

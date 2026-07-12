@@ -14,10 +14,10 @@ StatusChip::StatusChip(const QString& text, QWidget* parent)
     layout->setContentsMargins(10, 4, 12, 4);
     layout->setSpacing(8);
 
-    auto* dot = new QFrame();
-    dot->setObjectName("StatusChipDot");
-    dot->setFixedSize(8, 8);
-    layout->addWidget(dot, 0, Qt::AlignVCenter);
+    dot_ = new QFrame();
+    dot_->setObjectName("StatusChipDot");
+    dot_->setFixedSize(8, 8);
+    layout->addWidget(dot_, 0, Qt::AlignVCenter);
 
     textLabel_ = new QLabel(text);
     textLabel_->setObjectName("StatusChipText");
@@ -27,6 +27,11 @@ StatusChip::StatusChip(const QString& text, QWidget* parent)
 void StatusChip::setText(const QString& text)
 {
     textLabel_->setText(text);
+}
+
+void StatusChip::setDotColor(const QString& color)
+{
+    dot_->setStyleSheet(QString("background: %1; border: none; border-radius: 4px;").arg(color));
 }
 
 } // namespace xcwj::ui

@@ -34,6 +34,7 @@ private:
     StatusChip* fpsChip_ = nullptr;
     ModePillBar* modePillBar_ = nullptr;
     CaptureFAB* captureButton_ = nullptr;
+    QString lastCameraStatus_;
 };
 
 } // namespace xcwj::ui
