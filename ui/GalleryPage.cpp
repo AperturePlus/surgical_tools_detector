@@ -26,7 +26,7 @@ GalleryPage::GalleryPage(QWidget* parent)
     : QWidget(parent)
 {
     auto* root = new QVBoxLayout(this);
-    root->setContentsMargins(22, 18, 22, 18);
+    root->setContentsMargins(20, 18, 20, 18);
     root->setSpacing(14);
 
     auto* header = new QHBoxLayout();

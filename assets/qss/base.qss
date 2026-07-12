@@ -170,3 +170,33 @@ QDateEdit {
     padding: 4px 8px;
 }
 QDateEdit::drop-down { width: 18px; border: none; }
+
+QFrame#Card { border-left: 3px solid {{accent}}; }
+QFrame#CardFlat { background: transparent; border: none; }
+QFrame#CardFlat QLabel#CardTitle { color: {{textSecondary}}; }
+
+QPushButton#Secondary {
+    background: transparent;
+    border: 1px solid {{border}};
+    color: {{textSecondary}};
+    border-radius: 6px;
+    padding: 8px 14px;
+}
+QPushButton#Secondary:hover { background: {{surface}}; color: {{textPrimary}}; }
+
+QScrollBar:vertical { background: transparent; width: 10px; margin: 0; }
+QScrollBar:horizontal { background: transparent; height: 10px; margin: 0; }
+QScrollBar::handle:vertical, QScrollBar::handle:horizontal {
+    background: {{scrollBar}};
+    border-radius: 4px;
+    min-height: 24px;
+    min-width: 24px;
+}
+QScrollBar::handle:vertical:hover, QScrollBar::handle:horizontal:hover {
+    background: {{scrollBarHover}};
+}
+QScrollBar::add-line, QScrollBar::sub-line,
+QScrollBar::add-page, QScrollBar::sub-page { background: none; height: 0; width: 0; }
+
+QLineEdit:focus, QPushButton:focus, QToolButton:focus,
+QSlider:focus { border: 1px solid {{focusRing}}; }

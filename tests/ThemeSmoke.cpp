@@ -1,6 +1,8 @@
 #include <iostream>
 
 #include <QCoreApplication>
+#include <QFile>
+#include <QIODevice>
 
 #include "ui/Theme.h"
 
@@ -37,6 +39,19 @@ int main(int argc, char* argv[])
     }
     if (!lightQss.contains(light.accent)) {
         std::cerr << "light accent token missing in rendered qss\n";
+        return 1;
+    }
+
+    // HUD chips must not hardcode the dark background; they must use the token.
+    // We check the raw QSS resource (before substitution) because the dark
+    // chipBg token legitimately resolves to the same rgba value.
+    QFile rawQss(":/qss/base.qss");
+    if (!rawQss.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        std::cerr << "could not open raw base.qss for hardcode check\n";
+        return 1;
+    }
+    if (QString::fromUtf8(rawQss.readAll()).contains("rgba(14,20,27,0.72)")) {
+        std::cerr << "base.qss still hardcodes chip background\n";
         return 1;
     }
 
