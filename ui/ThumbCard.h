@@ -6,7 +6,6 @@
 #include "core/CaptureStore.h"
 
 class QLabel;
-class QEnterEvent;
 class QMouseEvent;
 
 namespace xcwj::ui {
@@ -21,8 +20,6 @@ signals:
     void activated(const QString& id);
 
 protected:
-    void enterEvent(QEnterEvent* event) override;
-    void leaveEvent(QEvent* event) override;
     void mousePressEvent(QMouseEvent* event) override;
     void mouseDoubleClickEvent(QMouseEvent* event) override;
 

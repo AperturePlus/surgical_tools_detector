@@ -125,7 +125,7 @@ QFrame#ThumbCard {
     border: 1px solid {{border}};
     border-radius: 10px;
 }
-QFrame#ThumbCard:hover { border-color: {{accent}}; }
+QFrame#ThumbCard:hover { border-color: {{accent}}; background: {{elevated}}; }
 QLabel#ThumbImage { background: {{elevated}}; border-top-left-radius: 9px; border-top-right-radius: 9px; }
 QLabel#ThumbMeta  { color: {{textSecondary}}; padding: 6px 10px; }
 QLabel#BadgeWarn  { color: {{warn}}; font-weight: 700; }

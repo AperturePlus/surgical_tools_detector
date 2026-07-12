@@ -2,8 +2,6 @@
 
 #include <QDateTime>
 #include <QColor>
-#include <QEnterEvent>
-#include <QGraphicsDropShadowEffect>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QMouseEvent>
@@ -59,22 +57,6 @@ ThumbCard::ThumbCard(const CaptureRecord& record, QWidget* parent)
         loadThumbnail();
     });
     loadThumbnail();
-}
-
-void ThumbCard::enterEvent(QEnterEvent* event)
-{
-    QFrame::enterEvent(event);
-    auto* effect = new QGraphicsDropShadowEffect(this);
-    effect->setBlurRadius(18);
-    effect->setOffset(0, 6);
-    effect->setColor(QColor(0, 0, 0, 90));
-    setGraphicsEffect(effect);
-}
-
-void ThumbCard::leaveEvent(QEvent* event)
-{
-    QFrame::leaveEvent(event);
-    setGraphicsEffect(nullptr);
 }
 
 void ThumbCard::mousePressEvent(QMouseEvent* event)
