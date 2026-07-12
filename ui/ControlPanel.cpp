@@ -153,6 +153,30 @@ void ControlPanel::setFrameResult(const DetectionFrameResult& result)
         tableUpdateTimer_.start();
     }
 
+    // Build a cheap signature; skip the table rebuild if nothing changed.
+    QString sig;
+    sig.reserve(128);
+    sig += "T"; sig += QString::number(result.toolDetections.size());
+    sig += "G"; sig += QString::number(result.graspDetections.size());
+    sig += "D"; sig += QString::number(result.defectResults.size());
+    sig += "|";
+    auto append = [&sig](const QString& mode, const QString& label, float score) {
+        sig += mode + ":" + label + ":" + QString::number(score, 'f', 3) + ";";
+    };
+    for (const auto& d : result.toolDetections) {
+        append("Tool", QString::fromStdString(d.label), d.score);
+    }
+    for (const auto& d : result.graspDetections) {
+        append("Grasp", QString::fromStdString(d.label), d.score);
+    }
+    for (const auto& d : result.defectResults) {
+        append("Defect", d.defective ? "Defective" : "Normal", d.defectScore);
+    }
+    if (sig == lastSignature_) {
+        return;
+    }
+    lastSignature_ = sig;
+
     const int rows = static_cast<int>(result.toolDetections.size()
         + result.graspDetections.size()
         + result.defectResults.size());

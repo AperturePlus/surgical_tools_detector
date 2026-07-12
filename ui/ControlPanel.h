@@ -4,6 +4,7 @@
 
 #include <QFrame>
 #include <QElapsedTimer>
+#include <QString>
 
 #include "core/DetectionMetadata.h"
 #include "core/DetectionPipeline.h"
@@ -52,6 +53,7 @@ private:
     QLabel* defectModelLabel_ = nullptr;
     QTableWidget* resultTable_ = nullptr;
     QElapsedTimer tableUpdateTimer_;
+    QString lastSignature_;
 
     QSlider* makeSlider(float value, QLabel*& label, const QString& name);
     QWidget* makeSliderRow(QSlider* slider, QLabel* label);
