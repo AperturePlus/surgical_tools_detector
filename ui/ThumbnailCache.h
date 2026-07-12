@@ -9,7 +9,7 @@
 #include <QSize>
 #include <QThreadPool>
 
-namespace sgt::ui {
+namespace xcwj::ui {
 
 class ThumbnailCache final : public QObject {
     Q_OBJECT
@@ -37,4 +37,4 @@ private:
     void remember(const QString& key, const QPixmap& pixmap);
 };
 
-} // namespace sgt::ui
+} // namespace xcwj::ui

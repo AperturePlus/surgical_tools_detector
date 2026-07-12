@@ -1,9 +1,10 @@
 #include "ui/ThemeManager.h"
 
 #include <QApplication>
-#include <QSettings>
 
-namespace sgt::ui {
+#include "core/AppSettings.h"
+
+namespace xcwj::ui {
 
 ThemeManager& ThemeManager::instance()
 {
@@ -13,8 +14,8 @@ ThemeManager& ThemeManager::instance()
 
 ThemeManager::ThemeManager()
 {
-    QSettings settings("SGT", "Detector");
-    const QString mode = settings.value("ui/theme", "dark").toString();
+    AppSettings settings;
+    const QString mode = settings.themeMode();
     tokens_ = (mode == "light") ? Theme::light() : Theme::dark();
 }
 
@@ -29,7 +30,8 @@ void ThemeManager::setMode(const QString& mode)
     const ThemeTokens next = (mode == "light") ? Theme::light() : Theme::dark();
     if (next.name == tokens_.name) return;
     tokens_ = next;
-    QSettings("SGT", "Detector").setValue("ui/theme", tokens_.name);
+    AppSettings settings;
+    settings.setThemeMode(tokens_.name);
     applyToApp();
     emit themeChanged(tokens_);
 }
@@ -45,4 +47,4 @@ void ThemeManager::applyToApp()
     app_->setStyleSheet(Theme::renderQss(tokens_));
 }
 
-} // namespace sgt::ui
+} // namespace xcwj::ui

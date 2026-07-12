@@ -3,7 +3,7 @@
 #include "core/FontRenderer.h"
 #include <opencv2/imgproc.hpp>
 
-namespace sgt {
+namespace xcwj {
 
 /// FontRenderer implementation using cv::putText with Hershey fonts.
 /// ASCII-only. Enable WITH_FREETYPE=ON and implement FreeTypeFontRenderer
@@ -33,4 +33,4 @@ private:
 #endif
 };
 
-} // namespace sgt
+} // namespace xcwj

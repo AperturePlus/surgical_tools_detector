@@ -5,7 +5,7 @@
 #include "core/Renderer.h"
 #include "core/FontRenderer.h"
 
-namespace sgt {
+namespace xcwj {
 
 /// Renderer implementation using OpenCV HighGUI (imshow / waitKey).
 /// To switch to Dear ImGui or Qt:
@@ -13,7 +13,7 @@ namespace sgt {
 class OpenCVRenderer : public Renderer {
 public:
     explicit OpenCVRenderer(std::unique_ptr<FontRenderer> font,
-                            const std::string& windowName = "SGTDetector");
+                            const std::string& windowName = "XunChaWeiJian");
     ~OpenCVRenderer() override;
 
     void drawDetections(cv::Mat&                      frame,
@@ -48,4 +48,4 @@ private:
                         cv::Scalar         bgColor);
 };
 
-} // namespace sgt
+} // namespace xcwj

@@ -9,7 +9,7 @@
 
 #include "ui/QtImageUtils.h"
 
-namespace sgt::ui {
+namespace xcwj::ui {
 
 namespace {
 
@@ -63,4 +63,4 @@ double LivePreviewWidget::updatePixmap()
     return elapsedMs(start);
 }
 
-} // namespace sgt::ui
+} // namespace xcwj::ui

@@ -28,7 +28,7 @@ int main(int argc, char* argv[])
     bool done = false;
     QEventLoop loop;
     QTimer::singleShot(5000, &loop, &QEventLoop::quit);
-    sgt::ui::ThumbnailCache::instance().requestThumbnail(
+    xcwj::ui::ThumbnailCache::instance().requestThumbnail(
         "sample",
         QString::fromStdString(imagePath.string()),
         [&](QPixmap pixmap) {

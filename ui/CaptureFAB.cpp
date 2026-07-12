@@ -1,6 +1,6 @@
 #include "ui/CaptureFAB.h"
 
-namespace sgt::ui {
+namespace xcwj::ui {
 
 CaptureFAB::CaptureFAB(QWidget* parent)
     : QPushButton("Capture", parent)
@@ -10,4 +10,4 @@ CaptureFAB::CaptureFAB(QWidget* parent)
     setCursor(Qt::PointingHandCursor);
 }
 
-} // namespace sgt::ui
+} // namespace xcwj::ui

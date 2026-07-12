@@ -5,7 +5,7 @@
 #include <QHBoxLayout>
 #include <QPushButton>
 
-namespace sgt::ui {
+namespace xcwj::ui {
 
 GalleryFilterBar::GalleryFilterBar(QWidget* parent)
     : QFrame(parent)
@@ -109,4 +109,4 @@ void GalleryFilterBar::emitIfChanged(QDate from, QDate to)
     emit rangeChanged(from_, to_);
 }
 
-} // namespace sgt::ui
+} // namespace xcwj::ui

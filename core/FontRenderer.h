@@ -3,7 +3,7 @@
 #include <string>
 #include <opencv2/core.hpp>
 
-namespace sgt {
+namespace xcwj {
 
 /// Abstract interface for text rendering.
 /// Default implementation uses cv::putText (ASCII-only, Hershey fonts).
@@ -27,4 +27,4 @@ public:
                                  int*               baseline) = 0;
 };
 
-} // namespace sgt
+} // namespace xcwj

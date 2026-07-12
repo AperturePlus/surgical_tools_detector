@@ -7,7 +7,7 @@
 #include "DefectResult.h"
 #include "Detection.h"
 
-namespace sgt {
+namespace xcwj {
 
 /// Bitmask for active detection modes.
 enum ModeMask : uint8_t {
@@ -57,4 +57,4 @@ public:
     RendererConfig config;
 };
 
-} // namespace sgt
+} // namespace xcwj

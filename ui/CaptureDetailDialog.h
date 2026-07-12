@@ -13,7 +13,7 @@ class QPlainTextEdit;
 class QResizeEvent;
 class QScrollArea;
 
-namespace sgt::ui {
+namespace xcwj::ui {
 
 class CaptureDetailDialog final : public QDialog {
     Q_OBJECT
@@ -44,4 +44,4 @@ private:
     void navigate(int delta);
 };
 
-} // namespace sgt::ui
+} // namespace xcwj::ui

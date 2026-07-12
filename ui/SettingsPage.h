@@ -11,7 +11,7 @@ class QPushButton;
 class QSlider;
 class QSpinBox;
 
-namespace sgt::ui {
+namespace xcwj::ui {
 
 class Card;
 
@@ -50,4 +50,4 @@ private:
     static QString thresholdLabelText(int percent);
 };
 
-} // namespace sgt::ui
+} // namespace xcwj::ui

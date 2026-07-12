@@ -19,7 +19,7 @@
 #include "ui/Card.h"
 #include "ui/ThemeManager.h"
 
-namespace sgt::ui {
+namespace xcwj::ui {
 
 namespace {
 
@@ -250,4 +250,4 @@ void ControlPanel::emitModeIfChanged(uint8_t next)
     emit modeMaskChanged(currentModeMask_);
 }
 
-} // namespace sgt::ui
+} // namespace xcwj::ui

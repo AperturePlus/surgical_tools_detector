@@ -11,7 +11,7 @@ class QLabel;
 class QLineEdit;
 class QVBoxLayout;
 
-namespace sgt::ui {
+namespace xcwj::ui {
 
 class GalleryFilterBar;
 
@@ -42,4 +42,4 @@ private:
     QString dateHeading(const QString& timestamp) const;
 };
 
-} // namespace sgt::ui
+} // namespace xcwj::ui

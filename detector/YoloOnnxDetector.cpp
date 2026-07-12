@@ -13,7 +13,7 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/dnn.hpp>
 
-namespace sgt {
+namespace xcwj {
 
 namespace {
 
@@ -184,7 +184,7 @@ YoloOnnxDetector::YoloOnnxDetector(const std::string&   modelPath,
                                    float                confThresh,
                                    float                nmsThresh,
                                    const LabelProvider* labels)
-    : env_(ORT_LOGGING_LEVEL_WARNING, "SGTDetector")
+    : env_(ORT_LOGGING_LEVEL_WARNING, "XunChaWeiJian")
     , inputSize_(inputSize)
     , numClasses_(0)
     , confThresh_(confThresh)
@@ -198,9 +198,9 @@ YoloOnnxDetector::YoloOnnxDetector(const std::string&   modelPath,
     sessionOpts_.SetGraphOptimizationLevel(ORT_ENABLE_ALL);
     const auto availableProviders = Ort::GetAvailableProviders();
     const auto availableEpDevices = env_.GetEpDevices();
-    std::cout << "[SGTDetector] ONNX Runtime available EPs: "
+    std::cout << "[XunChaWeiJian] ONNX Runtime available EPs: "
               << joinProviders(availableProviders) << "\n";
-    std::cout << "[SGTDetector] ONNX Runtime available EP devices: "
+    std::cout << "[XunChaWeiJian] ONNX Runtime available EP devices: "
               << joinEpDeviceNames(availableEpDevices) << "\n";
 
     bool sessionCreated = false;
@@ -212,10 +212,10 @@ YoloOnnxDetector::YoloOnnxDetector(const std::string&   modelPath,
     };
     std::vector<EpCandidate> candidates;
 
-#ifdef SGT_WITH_CUDA
+#ifdef XCWJ_WITH_CUDA
     candidates.push_back({"CUDA", {"CUDAExecutionProvider", "CUDA"}});
 #endif
-#ifdef SGT_WITH_DIRECTML
+#ifdef XCWJ_WITH_DIRECTML
 #ifdef _WIN32
     candidates.push_back({"DirectML", {"DmlExecutionProvider", "DMLExecutionProvider", "DML"}});
 #endif
@@ -228,7 +228,7 @@ YoloOnnxDetector::YoloOnnxDetector(const std::string&   modelPath,
 
         auto epDevices = selectEpDevices(availableEpDevices, candidate.aliases);
         if (epDevices.empty()) {
-            std::cerr << "[SGTDetector] " << candidate.label
+            std::cerr << "[XunChaWeiJian] " << candidate.label
                       << " provider reported by ORT but no EP device is available.\n";
             continue;
         }
@@ -246,24 +246,24 @@ YoloOnnxDetector::YoloOnnxDetector(const std::string&   modelPath,
             session_ = std::make_unique<Ort::Session>(env_, wpath.c_str(), epOpts);
             sessionOpts_ = std::move(epOpts);
             activeEp = candidate.label;
-            std::cout << "[SGTDetector] " << candidate.label
+            std::cout << "[XunChaWeiJian] " << candidate.label
                       << " Execution Provider enabled.\n";
             sessionCreated = true;
             break;
         } catch (const Ort::Exception& e) {
-            std::cerr << "[SGTDetector] " << candidate.label
+            std::cerr << "[XunChaWeiJian] " << candidate.label
                       << " EP init failed: " << e.what() << "\n";
         }
     }
 
-#ifndef SGT_WITH_CUDA
+#ifndef XCWJ_WITH_CUDA
     if (hasProvider(availableProviders, {"CUDAExecutionProvider"})) {
-        std::cerr << "[SGTDetector] CUDA is available in ORT, but this binary was built without WITH_CUDA=ON.\n";
+        std::cerr << "[XunChaWeiJian] CUDA is available in ORT, but this binary was built without WITH_CUDA=ON.\n";
     }
 #endif
-#ifndef SGT_WITH_DIRECTML
+#ifndef XCWJ_WITH_DIRECTML
     if (hasProvider(availableProviders, {"DmlExecutionProvider", "DMLExecutionProvider", "DML"})) {
-        std::cerr << "[SGTDetector] DirectML is available in ORT, but this binary was built without WITH_DIRECTML=ON.\n";
+        std::cerr << "[XunChaWeiJian] DirectML is available in ORT, but this binary was built without WITH_DIRECTML=ON.\n";
     }
 #endif
 
@@ -275,9 +275,9 @@ YoloOnnxDetector::YoloOnnxDetector(const std::string&   modelPath,
 #else
         session_ = std::make_unique<Ort::Session>(env_, modelPath.c_str(), sessionOpts_);
 #endif
-        std::cout << "[SGTDetector] Using CPU Execution Provider (" << threads << " threads).\n";
+        std::cout << "[XunChaWeiJian] Using CPU Execution Provider (" << threads << " threads).\n";
     } else {
-        std::cout << "[SGTDetector] Active EP: " << activeEp << "\n";
+        std::cout << "[XunChaWeiJian] Active EP: " << activeEp << "\n";
     }
 
     // ── Query input / output names ─────────────────────────────────────────
@@ -321,7 +321,7 @@ YoloOnnxDetector::YoloOnnxDetector(const std::string&   modelPath,
 
     inputShape_ = {1, 3, inputSize_, inputSize_};
 
-    std::cout << "[SGTDetector] Model : " << modelPath << "\n"
+    std::cout << "[XunChaWeiJian] Model : " << modelPath << "\n"
               << "  Input  : " << inputName_
               << "  [1,3," << inputSize_ << "," << inputSize_ << "]\n"
               << "  Input type : " << tensorElementTypeName(inputElementType_) << "\n"
@@ -509,5 +509,5 @@ std::vector<Detection> YoloOnnxDetector::detect(const cv::Mat& frame)
     }
 }
 
-} // namespace sgt
+} // namespace xcwj
 

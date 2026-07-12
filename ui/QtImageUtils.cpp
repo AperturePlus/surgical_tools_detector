@@ -8,7 +8,7 @@
 
 #include "core/Renderer.h"
 
-namespace sgt::ui {
+namespace xcwj::ui {
 
 QImage matToImage(const cv::Mat& mat)
 {
@@ -50,4 +50,4 @@ QString readTextFile(const QString& path)
     return QString::fromStdString(ss.str());
 }
 
-} // namespace sgt::ui
+} // namespace xcwj::ui

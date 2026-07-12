@@ -6,7 +6,7 @@
 
 class QApplication;
 
-namespace sgt::ui {
+namespace xcwj::ui {
 
 class ThemeManager final : public QObject {
     Q_OBJECT
@@ -33,4 +33,4 @@ private:
     void applyToApp();
 };
 
-} // namespace sgt::ui
+} // namespace xcwj::ui

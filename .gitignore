@@ -12,8 +12,8 @@
 
 # Common local/generated files
 /CMakeUserPresets.json
-/SGTDetector-*-windows-x64*/
-/SGTDetector-*-windows-x64*.zip
+/XunChaWeiJian-*-windows-x64*/
+/XunChaWeiJian-*-windows-x64*.zip
 
 build*/
 version/

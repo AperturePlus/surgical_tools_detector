@@ -8,7 +8,7 @@
 #include "ui/IconLoader.h"
 #include "ui/ThemeManager.h"
 
-namespace sgt::ui {
+namespace xcwj::ui {
 
 namespace {
 
@@ -27,7 +27,7 @@ Sidebar::Sidebar(QWidget* parent)
     layout->setContentsMargins(8, 14, 8, 14);
     layout->setSpacing(10);
 
-    auto* brand = new QLabel("SGT");
+    auto* brand = new QLabel("XCWJ");
     brand->setObjectName("BrandMark");
     brand->setAlignment(Qt::AlignCenter);
     brand->setFixedHeight(40);
@@ -118,4 +118,4 @@ void Sidebar::refreshThemeIcon()
                                            kThemeIconSize));
 }
 
-} // namespace sgt::ui
+} // namespace xcwj::ui

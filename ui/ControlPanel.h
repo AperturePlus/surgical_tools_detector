@@ -12,7 +12,7 @@ class QLabel;
 class QSlider;
 class QTableWidget;
 
-namespace sgt::ui {
+namespace xcwj::ui {
 
 class ControlPanel final : public QFrame {
     Q_OBJECT
@@ -59,4 +59,4 @@ private:
     void emitModeIfChanged(uint8_t next);
 };
 
-} // namespace sgt::ui
+} // namespace xcwj::ui

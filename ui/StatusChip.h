@@ -4,7 +4,7 @@
 
 class QLabel;
 
-namespace sgt::ui {
+namespace xcwj::ui {
 
 class StatusChip final : public QFrame {
     Q_OBJECT
@@ -18,4 +18,4 @@ private:
     QLabel* textLabel_ = nullptr;
 };
 
-} // namespace sgt::ui
+} // namespace xcwj::ui

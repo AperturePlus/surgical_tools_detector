@@ -2,7 +2,7 @@
 
 #include <QString>
 
-namespace sgt::ui {
+namespace xcwj::ui {
 
 struct ThemeTokens {
     QString name;
@@ -26,4 +26,4 @@ namespace Theme {
     QString renderQss(const ThemeTokens& tokens);
 }
 
-} // namespace sgt::ui
+} // namespace xcwj::ui

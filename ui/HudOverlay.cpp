@@ -9,7 +9,7 @@
 #include "ui/ModePillBar.h"
 #include "ui/StatusChip.h"
 
-namespace sgt::ui {
+namespace xcwj::ui {
 
 HudOverlay::HudOverlay(uint8_t initialModeMask, QWidget* parent)
     : QWidget(parent)
@@ -65,4 +65,4 @@ void HudOverlay::setFrameSummary(const DetectionFrameResult& result)
     Q_UNUSED(result);
 }
 
-} // namespace sgt::ui
+} // namespace xcwj::ui

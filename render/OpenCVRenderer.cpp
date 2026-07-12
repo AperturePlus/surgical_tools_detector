@@ -6,7 +6,7 @@
 #include <iomanip>
 #include <cmath>
 
-namespace sgt {
+namespace xcwj {
 
 // ─────────────────────────────────────────────────────────────────────────────
 OpenCVRenderer::OpenCVRenderer(std::unique_ptr<FontRenderer> font,
@@ -171,4 +171,4 @@ void OpenCVRenderer::onScreenshot(const std::string& path)
     screenshotFramesLeft_ = 75;
 }
 
-} // namespace sgt
+} // namespace xcwj

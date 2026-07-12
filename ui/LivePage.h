@@ -7,7 +7,7 @@
 #include "core/DetectionMetadata.h"
 #include "core/DetectionPipeline.h"
 
-namespace sgt::ui {
+namespace xcwj::ui {
 
 class ControlPanel;
 class HudOverlay;
@@ -39,4 +39,4 @@ private:
     ControlPanel* controlPanel_ = nullptr;
 };
 
-} // namespace sgt::ui
+} // namespace xcwj::ui

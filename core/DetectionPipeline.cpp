@@ -16,7 +16,7 @@
 #include "detector/YoloOnnxDetector.h"
 #include "label/DictLabelProvider.h"
 
-namespace sgt {
+namespace xcwj {
 
 namespace {
 
@@ -226,4 +226,4 @@ ModelInfo DetectionEngine::models() const
     return {toolPath_, graspPath_, defectPath_};
 }
 
-} // namespace sgt
+} // namespace xcwj

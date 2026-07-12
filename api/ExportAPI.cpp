@@ -10,7 +10,7 @@
 
 #include <opencv2/imgcodecs.hpp>
 
-namespace sgt {
+namespace xcwj {
 
 static std::string timestamp() {
     auto t = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
@@ -181,4 +181,4 @@ bool saveExport(const ExportData& data, const std::string& outputDir) {
     }
 }
 
-} // namespace sgt
+} // namespace xcwj

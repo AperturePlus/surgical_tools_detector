@@ -4,7 +4,7 @@
 #include <QList>
 #include <QStyle>
 
-namespace sgt::ui {
+namespace xcwj::ui {
 
 class FlowLayout final : public QLayout {
 public:
@@ -34,4 +34,4 @@ private:
     int smartSpacing(QStyle::PixelMetric pm) const;
 };
 
-} // namespace sgt::ui
+} // namespace xcwj::ui

@@ -2,7 +2,7 @@
 
 #include <string>
 
-namespace sgt {
+namespace xcwj {
 
 struct DetectionThresholds {
     float tool   = 0.65f;
@@ -16,4 +16,4 @@ struct ModelInfo {
     std::string defectModel;
 };
 
-} // namespace sgt
+} // namespace xcwj

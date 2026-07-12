@@ -14,7 +14,7 @@
 #include "core/Renderer.h"
 #include "ui/Card.h"
 
-namespace sgt::ui {
+namespace xcwj::ui {
 
 namespace {
 
@@ -230,4 +230,4 @@ QString SettingsPage::thresholdLabelText(int percent)
     return QStringLiteral("%1%").arg(percent);
 }
 
-} // namespace sgt::ui
+} // namespace xcwj::ui

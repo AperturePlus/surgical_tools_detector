@@ -3,7 +3,7 @@
 #include <string>
 #include <opencv2/core.hpp>
 
-namespace sgt {
+namespace xcwj {
 
 /// Axis-aligned bounding box in pixel coordinates (top-left origin).
 struct BBox {
@@ -30,4 +30,4 @@ struct Detection {
     std::string label;    ///< Display label (resolved by LabelProvider)
 };
 
-} // namespace sgt
+} // namespace xcwj

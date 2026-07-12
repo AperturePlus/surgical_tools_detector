@@ -19,23 +19,23 @@ static std::string readText(const fs::path& path)
 
 int main()
 {
-    fs::path root = fs::temp_directory_path() / "sgtdetector_capture_store_smoke";
+    fs::path root = fs::temp_directory_path() / "xcwj_capture_store_smoke";
     fs::remove_all(root);
 
-    sgt::DetectionFrameResult result;
+    xcwj::DetectionFrameResult result;
     result.rawFrame = cv::Mat(32, 48, CV_8UC3, cv::Scalar(20, 40, 60));
     result.annotatedFrame = cv::Mat(32, 48, CV_8UC3, cv::Scalar(60, 40, 20));
-    result.activeModes = sgt::MODE_TOOL | sgt::MODE_DEFECT;
+    result.activeModes = xcwj::MODE_TOOL | xcwj::MODE_DEFECT;
     result.thresholds = {0.25f, 0.30f, 0.55f};
 
-    sgt::Detection det;
+    xcwj::Detection det;
     det.classId = 1;
     det.label = "骨钳";
     det.score = 0.91f;
     det.bbox = {1, 2, 20, 12};
     result.toolDetections.push_back(det);
 
-    sgt::DefectResult defect;
+    xcwj::DefectResult defect;
     defect.toolIndex = 0;
     defect.bbox = det.bbox;
     defect.normalScore = 0.1f;
@@ -43,7 +43,7 @@ int main()
     defect.defective = true;
     result.defectResults.push_back(defect);
 
-    sgt::CaptureStore store(root);
+    xcwj::CaptureStore store(root);
     auto record = store.saveCapture(result, {"tool.onnx", "grasp.onnx", "defect.onnx"});
 
     bool ok = fs::exists(record.rawImagePath)
@@ -57,7 +57,7 @@ int main()
         && json.find("\"label\":\"骨钳\"") != std::string::npos
         && json.find("\"defectCount\":1") != std::string::npos;
 
-    sgt::CaptureStore loaded(root);
+    xcwj::CaptureStore loaded(root);
     ok = ok && loaded.records().size() == 1;
 
     fs::remove_all(root);

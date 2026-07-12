@@ -11,7 +11,7 @@
 
 #include "ui/QtImageUtils.h"
 
-namespace sgt::ui {
+namespace xcwj::ui {
 
 namespace {
 
@@ -97,4 +97,4 @@ void ThumbnailCache::remember(const QString& key, const QPixmap& pixmap)
     }
 }
 
-} // namespace sgt::ui
+} // namespace xcwj::ui

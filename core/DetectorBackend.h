@@ -5,7 +5,7 @@
 #include "Detection.h"
 #include "core/PerfStats.h"
 
-namespace sgt {
+namespace xcwj {
 
 /// Abstract interface for object detection backends.
 /// To add a new backend (TensorRT, OpenVINO, etc.):
@@ -32,4 +32,4 @@ public:
     virtual float getNmsThresh() const = 0;
 };
 
-} // namespace sgt
+} // namespace xcwj

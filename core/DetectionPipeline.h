@@ -13,7 +13,7 @@
 #include "core/PerfStats.h"
 #include "core/Renderer.h"
 
-namespace sgt {
+namespace xcwj {
 
 class DetectorBackend;
 class LabelProvider;
@@ -77,4 +77,4 @@ private:
     FrameAnnotator annotator_;
 };
 
-} // namespace sgt
+} // namespace xcwj

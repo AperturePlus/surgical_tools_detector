@@ -6,7 +6,7 @@
 #include "detector/YoloOnnxDetector.h"
 #include "label/DictLabelProvider.h"
 
-namespace sgt {
+namespace xcwj {
 
 static const std::vector<std::string> TOOL_CLASSES = {
     "cefangkaikouqi","guqian","gujian","gudao","xianjian","yating",
@@ -62,4 +62,4 @@ ImageDetectionResult ImageInputAPI::detectImage(const cv::Mat& image, uint8_t mo
     return result;
 }
 
-} // namespace sgt
+} // namespace xcwj

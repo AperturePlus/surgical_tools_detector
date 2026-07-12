@@ -9,7 +9,7 @@
 #include "api/ExportAPI.h"
 #include "core/DetectionPipeline.h"
 
-namespace sgt {
+namespace xcwj {
 
 struct CaptureRecord {
     std::string id;
@@ -41,4 +41,4 @@ private:
     void writeIndex() const;
 };
 
-} // namespace sgt
+} // namespace xcwj

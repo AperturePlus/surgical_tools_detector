@@ -20,7 +20,7 @@
 #include "ui/SettingsPage.h"
 #include "ui/Sidebar.h"
 
-namespace sgt::ui {
+namespace xcwj::ui {
 
 namespace {
 
@@ -33,7 +33,8 @@ double elapsedMs(Clock::time_point start, Clock::time_point end = Clock::now())
 
 bool profileEnabledFromEnv()
 {
-    const char* raw = std::getenv("SGT_PROFILE");
+    const char* raw = std::getenv("XCWJ_PROFILE");
+    if (!raw) raw = std::getenv("SGT_PROFILE");
     if (!raw) return false;
     const std::string value(raw);
     return !value.empty() && value != "0" && value != "false" && value != "FALSE";
@@ -55,7 +56,7 @@ AppShell::AppShell(AppOptions opts,
 {
     engine_->setThresholds(thresholds_);
     if (profileEnabled_) {
-        std::cout << "[SGT_PROFILE] enabled; reporting 60-frame averages.\n";
+        std::cout << "[XCWJ_PROFILE] enabled; reporting 60-frame averages.\n";
     }
     buildUi();
     wireEvents();
@@ -70,7 +71,7 @@ AppShell::~AppShell()
 
 void AppShell::buildUi()
 {
-    setWindowTitle("SGTDetector");
+    setWindowTitle("XunChaWeiJian");
     resize(1440, 900);
 
     auto* root = new QWidget(this);
@@ -188,7 +189,7 @@ void AppShell::recordProfile(const PerfStats& perf)
     const double avgFps = avg.totalFrameMs > 0.0 ? 1000.0 / avg.totalFrameMs : 0.0;
 
     std::cout << std::fixed << std::setprecision(2)
-              << "[SGT_PROFILE] avg " << profileFrameCount_ << " frames"
+              << "[XCWJ_PROFILE] avg " << profileFrameCount_ << " frames"
               << " fps=" << avgFps
               << " total=" << avg.totalFrameMs << "ms"
               << " camera=" << avg.cameraReadMs << "ms"
@@ -221,4 +222,4 @@ void AppShell::captureCurrent()
     }
 }
 
-} // namespace sgt::ui
+} // namespace xcwj::ui

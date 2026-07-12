@@ -3,7 +3,7 @@
 #include <QFile>
 #include <QIODevice>
 
-namespace sgt::ui::Theme {
+namespace xcwj::ui::Theme {
 
 ThemeTokens dark()
 {
@@ -51,4 +51,4 @@ QString renderQss(const ThemeTokens& t)
     return s;
 }
 
-} // namespace sgt::ui::Theme
+} // namespace xcwj::ui::Theme

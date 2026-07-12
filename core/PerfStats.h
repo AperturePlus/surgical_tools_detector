@@ -1,6 +1,6 @@
 #pragma once
 
-namespace sgt {
+namespace xcwj {
 
 struct PerfStats {
     double cameraReadMs = 0.0;
@@ -48,4 +48,4 @@ inline PerfStats averagePerfStats(const PerfStats& totals, int frames)
     return out;
 }
 
-} // namespace sgt
+} // namespace xcwj

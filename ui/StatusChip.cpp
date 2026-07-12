@@ -4,7 +4,7 @@
 #include <QHBoxLayout>
 #include <QLabel>
 
-namespace sgt::ui {
+namespace xcwj::ui {
 
 StatusChip::StatusChip(const QString& text, QWidget* parent)
     : QFrame(parent)
@@ -29,4 +29,4 @@ void StatusChip::setText(const QString& text)
     textLabel_->setText(text);
 }
 
-} // namespace sgt::ui
+} // namespace xcwj::ui

@@ -2,7 +2,7 @@
 
 #include "Detection.h"
 
-namespace sgt {
+namespace xcwj {
 
 /// Per-tool defect classification result.
 struct DefectResult {
@@ -13,4 +13,4 @@ struct DefectResult {
     bool  defective   = false;  ///< True when defectScore crosses threshold
 };
 
-} // namespace sgt
+} // namespace xcwj

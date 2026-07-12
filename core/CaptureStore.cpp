@@ -10,7 +10,7 @@
 
 #include <opencv2/imgcodecs.hpp>
 
-namespace sgt {
+namespace xcwj {
 
 namespace {
 
@@ -259,4 +259,4 @@ void CaptureStore::writeIndex() const
     out << "  ]\n}\n";
 }
 
-} // namespace sgt
+} // namespace xcwj

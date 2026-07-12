@@ -25,9 +25,9 @@ static uint8_t parseMode(const std::string& raw)
 {
     std::string m = raw;
     std::transform(m.begin(), m.end(), m.begin(), ::tolower);
-    if (m == "tool") return sgt::MODE_TOOL;
-    if (m == "grasp") return sgt::MODE_GRASP;
-    if (m == "defect") return sgt::MODE_DEFECT;
+    if (m == "tool") return xcwj::MODE_TOOL;
+    if (m == "grasp") return xcwj::MODE_GRASP;
+    if (m == "defect") return xcwj::MODE_DEFECT;
     throw std::runtime_error("invalid mode: " + raw);
 }
 
@@ -37,10 +37,10 @@ static std::string requireVal(int& i, int argc, char* argv[], const std::string&
     return argv[++i];
 }
 
-static sgt::ui::AppOptions parseArgs(int argc, char* argv[])
+static xcwj::ui::AppOptions parseArgs(int argc, char* argv[])
 {
-    sgt::ui::AppOptions opts;
-    opts.modeMask = sgt::MODE_TOOL;
+    xcwj::ui::AppOptions opts;
+    opts.modeMask = xcwj::MODE_TOOL;
     opts.toolModel = DEFAULT_TOOL_MODEL;
     opts.graspModel = DEFAULT_GRASP_MODEL;
     opts.defectModel = DEFAULT_DEFECT_MODEL;
@@ -49,7 +49,7 @@ static sgt::ui::AppOptions parseArgs(int argc, char* argv[])
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
         if (arg == "--help" || arg == "-h") {
-            std::cout << "Usage: SGTDetector [camera_id] [--mode tool|grasp|defect] "
+            std::cout << "Usage: XunChaWeiJian [camera_id] [--mode tool|grasp|defect] "
                       << "[--tool-model p] [--grasp-model p] [--defect-model p]\n";
             std::exit(0);
         } else if (arg == "--mode") {
@@ -85,7 +85,7 @@ static std::string resolveAsset(const fs::path& exeDir, const std::string& name)
 
 int main(int argc, char* argv[])
 {
-    sgt::ui::AppOptions opts;
+    xcwj::ui::AppOptions opts;
     try {
         opts = parseArgs(argc, argv);
     } catch (const std::exception& e) {
@@ -94,9 +94,9 @@ int main(int argc, char* argv[])
     }
 
     QApplication app(argc, argv);
-    sgt::ui::ThemeManager::instance().apply(&app);
+    xcwj::ui::ThemeManager::instance().apply(&app);
 
-    sgt::AppSettings settings;
+    xcwj::AppSettings settings;
     if (!opts.cameraIdFromCli) {
         opts.cameraId = settings.cameraId();
     }
@@ -109,15 +109,15 @@ int main(int argc, char* argv[])
     std::string defectPath = resolveAsset(exeDir, opts.defectModel);
     std::string dictPath = resolveAsset(exeDir, "labels.dict");
 
-    auto engine = std::make_unique<sgt::DetectionEngine>(toolPath, graspPath, defectPath, dictPath);
+    auto engine = std::make_unique<xcwj::DetectionEngine>(toolPath, graspPath, defectPath, dictPath);
 
     QString captureDirPref = settings.captureDir();
     fs::path captureDir = captureDirPref.isEmpty()
         ? (exeDir / "captures")
         : fs::path(captureDirPref.toStdString());
-    auto store = std::make_unique<sgt::CaptureStore>(captureDir);
+    auto store = std::make_unique<xcwj::CaptureStore>(captureDir);
 
-    sgt::ui::AppShell window(opts, std::move(engine), std::move(store));
+    xcwj::ui::AppShell window(opts, std::move(engine), std::move(store));
     window.show();
     return app.exec();
 }

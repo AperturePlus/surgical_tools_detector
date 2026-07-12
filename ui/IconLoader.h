@@ -4,7 +4,7 @@
 #include <QSize>
 #include <QString>
 
-namespace sgt::ui {
+namespace xcwj::ui {
 
 // Loads ":/icons/<alias>.svg", substitutes the {{stroke}} placeholder with
 // `strokeColor`, and rasterizes to a device-pixel-aware QIcon at `size`.
@@ -16,4 +16,4 @@ public:
                       QSize size = QSize(22, 22));
 };
 
-} // namespace sgt::ui
+} // namespace xcwj::ui

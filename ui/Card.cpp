@@ -3,7 +3,7 @@
 #include <QLabel>
 #include <QVBoxLayout>
 
-namespace sgt::ui {
+namespace xcwj::ui {
 
 Card::Card(const QString& title, QWidget* parent)
     : QFrame(parent)
@@ -23,4 +23,4 @@ Card::Card(const QString& title, QWidget* parent)
     layout->addLayout(bodyLayout_);
 }
 
-} // namespace sgt::ui
+} // namespace xcwj::ui

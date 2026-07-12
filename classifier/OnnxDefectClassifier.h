@@ -10,7 +10,7 @@
 #include "core/DefectResult.h"
 #include "core/Detection.h"
 
-namespace sgt {
+namespace xcwj {
 
 /// Fixed-batch ONNX classifier for per-tool defect detection.
 class OnnxDefectClassifier {
@@ -43,4 +43,4 @@ private:
     void fillInputTensor(const cv::Mat& crop, float* dst) const;
 };
 
-} // namespace sgt
+} // namespace xcwj

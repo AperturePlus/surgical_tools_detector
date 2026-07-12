@@ -11,7 +11,7 @@
 class QLabel;
 class QResizeEvent;
 
-namespace sgt::ui {
+namespace xcwj::ui {
 
 class LivePreviewWidget final : public QFrame {
     Q_OBJECT
@@ -31,4 +31,4 @@ private:
     double updatePixmap();
 };
 
-} // namespace sgt::ui
+} // namespace xcwj::ui

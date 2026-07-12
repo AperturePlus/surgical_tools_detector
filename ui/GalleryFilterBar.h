@@ -7,7 +7,7 @@ class QButtonGroup;
 class QDateEdit;
 class QPushButton;
 
-namespace sgt::ui {
+namespace xcwj::ui {
 
 class GalleryFilterBar final : public QFrame {
     Q_OBJECT
@@ -43,4 +43,4 @@ private:
     void emitIfChanged(QDate from, QDate to);
 };
 
-} // namespace sgt::ui
+} // namespace xcwj::ui

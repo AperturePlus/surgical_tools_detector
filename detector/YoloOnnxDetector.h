@@ -10,7 +10,7 @@
 #include "core/DetectorBackend.h"
 #include "core/LabelProvider.h"
 
-namespace sgt {
+namespace xcwj {
 
 /// YOLOv8 object detector backed by ONNX Runtime.
 ///
@@ -99,4 +99,4 @@ private:
     PerfStats lastPerf_;
 };
 
-} // namespace sgt
+} // namespace xcwj

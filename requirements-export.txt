@@ -4,7 +4,7 @@
 #   pip install -r requirements-export.txt
 #
 # These are only needed to convert YOLO .pt models to ONNX.
-# They are NOT required to run the compiled SGTDetector binary.
+# They are NOT required to run the compiled XunChaWeiJian binary.
 
 ultralytics>=8.3.0
 onnx>=1.16.0

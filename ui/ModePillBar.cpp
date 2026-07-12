@@ -6,7 +6,7 @@
 
 #include "core/Renderer.h"
 
-namespace sgt::ui {
+namespace xcwj::ui {
 
 ModePillBar::ModePillBar(uint8_t initialMask, QWidget* parent)
     : QFrame(parent)
@@ -55,4 +55,4 @@ void ModePillBar::syncButtons()
     defectButton_->setChecked(modeMask_ & MODE_DEFECT);
 }
 
-} // namespace sgt::ui
+} // namespace xcwj::ui

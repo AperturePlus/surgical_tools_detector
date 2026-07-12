@@ -95,13 +95,13 @@ jobs:
         run: |
           $tag     = "${{ github.ref_name }}"
           $backend = "${{ matrix.backend }}"
-          $out     = "SGTDetector-$tag-windows-x64-$backend"
+          $out     = "XunChaWeiJian-$tag-windows-x64-$backend"
           New-Item -ItemType Directory -Force $out | Out-Null
 
           # The cmake POST_BUILD ldd-based deployment already copied every
           # required DLL (MinGW runtime, OpenCV, ONNX Runtime, Qt6, …) into
           # the build directory.  Just mirror the whole build output.
-          Copy-Item build\SGTDetector.exe $out\
+          Copy-Item build\XunChaWeiJian.exe $out\
           Get-ChildItem build\*.dll -ErrorAction SilentlyContinue |
               Copy-Item -Destination $out\
           Get-ChildItem build\*.onnx -ErrorAction SilentlyContinue |
@@ -123,7 +123,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: windows-x64-${{ matrix.backend }}
-          path: SGTDetector-${{ github.ref_name }}-windows-x64-${{ matrix.backend }}.zip
+          path: XunChaWeiJian-${{ github.ref_name }}-windows-x64-${{ matrix.backend }}.zip
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Create a GitHub Release and attach all three packaged binaries.

@@ -5,7 +5,7 @@
 #include <unordered_map>
 #include "core/LabelProvider.h"
 
-namespace sgt {
+namespace xcwj {
 
 /// Loads a plain-text dictionary file (pinyin=display_label, # comments)
 /// and maps class IDs → display labels via the class-name index.
@@ -35,4 +35,4 @@ private:
     void loadDict(const std::string& path);
 };
 
-} // namespace sgt
+} // namespace xcwj

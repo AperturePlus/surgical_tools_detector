@@ -10,7 +10,7 @@
 #include "ui/HudOverlay.h"
 #include "ui/LivePreviewWidget.h"
 
-namespace sgt::ui {
+namespace xcwj::ui {
 
 LivePage::LivePage(uint8_t initialModeMask,
                    const DetectionThresholds& initialThresholds,
@@ -89,4 +89,4 @@ void LivePage::toggleMode(uint8_t bit)
     controlPanel_->toggleMode(bit);
 }
 
-} // namespace sgt::ui
+} // namespace xcwj::ui

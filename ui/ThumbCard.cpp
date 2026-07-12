@@ -13,7 +13,7 @@
 #include "ui/ThemeManager.h"
 #include "ui/ThumbnailCache.h"
 
-namespace sgt::ui {
+namespace xcwj::ui {
 
 ThumbCard::ThumbCard(const CaptureRecord& record, QWidget* parent)
     : QFrame(parent)
@@ -125,4 +125,4 @@ QString ThumbCard::displayTime() const
     return ts.size() >= 19 ? ts.mid(11, 8) : ts;
 }
 
-} // namespace sgt::ui
+} // namespace xcwj::ui

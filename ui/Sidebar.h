@@ -6,7 +6,7 @@
 class QButtonGroup;
 class QToolButton;
 
-namespace sgt::ui {
+namespace xcwj::ui {
 
 class Sidebar final : public QFrame {
     Q_OBJECT
@@ -32,4 +32,4 @@ private:
     void refreshThemeIcon();
 };
 
-} // namespace sgt::ui
+} // namespace xcwj::ui

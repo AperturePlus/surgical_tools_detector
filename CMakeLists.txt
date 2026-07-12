@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(SGTDetector VERSION 1.0.0 LANGUAGES CXX)
+project(XunChaWeiJian VERSION 1.0.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -21,37 +21,59 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 #   python scripts/export_model.py --model assets/models/cat.pt --backend cpu --output-dir assets/models
 #
 # Rename the exported ONNX to inventory_detection.onnx.
-# Override model filenames with SGT_TOOL_MODEL_ASSET, SGT_GRASP_MODEL_ASSET,
-# and SGT_DEFECT_MODEL_ASSET if needed.
+# Override model filenames with XCWJ_TOOL_MODEL_ASSET, XCWJ_GRASP_MODEL_ASSET,
+# and XCWJ_DEFECT_MODEL_ASSET if needed.
 # ─────────────────────────────────────────────────────────────────────────────
+# Legacy SGT_* cache variables are mapped to XCWJ_* for backwards compatibility.
+if(DEFINED SGT_RUN_WINDEPLOYQT AND NOT DEFINED XCWJ_RUN_WINDEPLOYQT)
+    set(XCWJ_RUN_WINDEPLOYQT "${SGT_RUN_WINDEPLOYQT}" CACHE BOOL
+        "Run windeployqt6 after build" FORCE)
+    message(WARNING "SGT_RUN_WINDEPLOYQT is deprecated; use XCWJ_RUN_WINDEPLOYQT instead.")
+endif()
+if(DEFINED SGT_TOOL_MODEL_ASSET AND NOT DEFINED XCWJ_TOOL_MODEL_ASSET)
+    set(XCWJ_TOOL_MODEL_ASSET "${SGT_TOOL_MODEL_ASSET}" CACHE STRING
+        "Inventory detector ONNX filename in assets/models/" FORCE)
+    message(WARNING "SGT_TOOL_MODEL_ASSET is deprecated; use XCWJ_TOOL_MODEL_ASSET instead.")
+endif()
+if(DEFINED SGT_GRASP_MODEL_ASSET AND NOT DEFINED XCWJ_GRASP_MODEL_ASSET)
+    set(XCWJ_GRASP_MODEL_ASSET "${SGT_GRASP_MODEL_ASSET}" CACHE STRING
+        "Grasp/work detector ONNX filename in assets/models/" FORCE)
+    message(WARNING "SGT_GRASP_MODEL_ASSET is deprecated; use XCWJ_GRASP_MODEL_ASSET instead.")
+endif()
+if(DEFINED SGT_DEFECT_MODEL_ASSET AND NOT DEFINED XCWJ_DEFECT_MODEL_ASSET)
+    set(XCWJ_DEFECT_MODEL_ASSET "${SGT_DEFECT_MODEL_ASSET}" CACHE STRING
+        "Tool defect classifier ONNX filename in assets/models/" FORCE)
+    message(WARNING "SGT_DEFECT_MODEL_ASSET is deprecated; use XCWJ_DEFECT_MODEL_ASSET instead.")
+endif()
+
 option(WITH_FREETYPE "Enable FreeType font renderer for CJK/Unicode text" OFF)
 option(WITH_CUDA     "Enable CUDA Execution Provider for ONNX Runtime"    OFF)
 option(WITH_DIRECTML "Enable DirectML Execution Provider for ONNX Runtime" OFF)
-option(SGT_RUN_WINDEPLOYQT "Run windeployqt6 after build"                  ON)
+option(XCWJ_RUN_WINDEPLOYQT "Run windeployqt6 after build"                  ON)
 
 # Runtime model filenames to copy next to the executable.
-set(_SGT_LEGACY_TOOL_MODEL_ASSET "surgical_tool_detector_yolov8_640.onnx")
-if(DEFINED SGT_TOOL_MODEL_ASSET AND SGT_TOOL_MODEL_ASSET STREQUAL _SGT_LEGACY_TOOL_MODEL_ASSET)
-    set(SGT_TOOL_MODEL_ASSET "inventory_detection.onnx" CACHE STRING
+set(_XCWJ_LEGACY_TOOL_MODEL_ASSET "surgical_tool_detector_yolov8_640.onnx")
+if(DEFINED XCWJ_TOOL_MODEL_ASSET AND XCWJ_TOOL_MODEL_ASSET STREQUAL _XCWJ_LEGACY_TOOL_MODEL_ASSET)
+    set(XCWJ_TOOL_MODEL_ASSET "inventory_detection.onnx" CACHE STRING
         "Inventory detector ONNX filename in assets/models/" FORCE)
 else()
-    set(SGT_TOOL_MODEL_ASSET "inventory_detection.onnx" CACHE STRING
+    set(XCWJ_TOOL_MODEL_ASSET "inventory_detection.onnx" CACHE STRING
         "Inventory detector ONNX filename in assets/models/")
 endif()
-set(_SGT_LEGACY_GRASP_MODEL_ASSET "grasp_state_detector_yolov8_640.onnx")
-if(DEFINED SGT_GRASP_MODEL_ASSET AND SGT_GRASP_MODEL_ASSET STREQUAL _SGT_LEGACY_GRASP_MODEL_ASSET)
-    set(SGT_GRASP_MODEL_ASSET "instrument_endpoint_detection.onnx" CACHE STRING
+set(_XCWJ_LEGACY_GRASP_MODEL_ASSET "grasp_state_detector_yolov8_640.onnx")
+if(DEFINED XCWJ_GRASP_MODEL_ASSET AND XCWJ_GRASP_MODEL_ASSET STREQUAL _XCWJ_LEGACY_GRASP_MODEL_ASSET)
+    set(XCWJ_GRASP_MODEL_ASSET "instrument_endpoint_detection.onnx" CACHE STRING
         "Grasp/work detector ONNX filename in assets/models/" FORCE)
 else()
-    set(SGT_GRASP_MODEL_ASSET "instrument_endpoint_detection.onnx" CACHE STRING
+    set(XCWJ_GRASP_MODEL_ASSET "instrument_endpoint_detection.onnx" CACHE STRING
         "Grasp/work detector ONNX filename in assets/models/")
 endif()
-set(SGT_DEFECT_MODEL_ASSET "tool_defect_classifier_resnet_512_b4.onnx" CACHE STRING
+set(XCWJ_DEFECT_MODEL_ASSET "tool_defect_classifier_resnet_512_b4.onnx" CACHE STRING
     "Tool defect classifier ONNX filename in assets/models/")
-set(SGT_RUNTIME_MODELS
-    "${SGT_TOOL_MODEL_ASSET}"
-    "${SGT_GRASP_MODEL_ASSET}"
-    "${SGT_DEFECT_MODEL_ASSET}"
+set(XCWJ_RUNTIME_MODELS
+    "${XCWJ_TOOL_MODEL_ASSET}"
+    "${XCWJ_GRASP_MODEL_ASSET}"
+    "${XCWJ_DEFECT_MODEL_ASSET}"
 )
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -64,7 +86,7 @@ find_package(Qt6 REQUIRED COMPONENTS Widgets)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 
-qt_add_resources(SGT_QRC_FILES assets/icons.qrc)
+qt_add_resources(XCWJ_QRC_FILES assets/icons.qrc)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # ONNX Runtime — bundled prebuilt in deps/, with MinGW import library
@@ -123,7 +145,7 @@ set_target_properties(onnxruntime PROPERTIES
 # ─────────────────────────────────────────────────────────────────────────────
 # Sources
 # ─────────────────────────────────────────────────────────────────────────────
-set(SGT_SOURCES
+set(XCWJ_SOURCES
     main.cpp
     api/ExportAPI.cpp
     api/ImageInputAPI.cpp
@@ -156,7 +178,7 @@ set(SGT_SOURCES
     ui/ThumbCard.cpp
     ui/ThumbnailCache.cpp
 )
-set(SGT_HEADERS
+set(XCWJ_HEADERS
     api/ExportAPI.h
     api/ImageInputAPI.h
     core/AppSettings.h
@@ -200,19 +222,19 @@ set(SGT_HEADERS
 # ── Optional: FreeType ────────────────────────────────────────────────────────
 if(WITH_FREETYPE)
     find_package(Freetype REQUIRED)
-    list(APPEND SGT_SOURCES render/FreeTypeFontRenderer.cpp)
-    list(APPEND SGT_HEADERS render/FreeTypeFontRenderer.h)
+    list(APPEND XCWJ_SOURCES render/FreeTypeFontRenderer.cpp)
+    list(APPEND XCWJ_HEADERS render/FreeTypeFontRenderer.h)
     message(STATUS "FreeType support enabled")
 endif()
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Executable
 # ─────────────────────────────────────────────────────────────────────────────
-add_executable(SGTDetector ${SGT_SOURCES} ${SGT_HEADERS} ${SGT_QRC_FILES})
+add_executable(XunChaWeiJian ${XCWJ_SOURCES} ${XCWJ_HEADERS} ${XCWJ_QRC_FILES})
 
-target_include_directories(SGTDetector PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(XunChaWeiJian PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_link_libraries(SGTDetector PRIVATE
+target_link_libraries(XunChaWeiJian PRIVATE
     ${OpenCV_LIBS}
     Qt6::Widgets
     onnxruntime
@@ -229,7 +251,7 @@ target_link_libraries(CaptureStoreSmoke PRIVATE ${OpenCV_LIBS})
 add_executable(ThemeSmoke
     tests/ThemeSmoke.cpp
     ui/Theme.cpp
-    ${SGT_QRC_FILES}
+    ${XCWJ_QRC_FILES}
 )
 target_include_directories(ThemeSmoke PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(ThemeSmoke PRIVATE Qt6::Core)
@@ -257,16 +279,16 @@ add_test(NAME AppSettingsSmoke COMMAND AppSettingsSmoke)
 
 # ── Feature compile definitions ───────────────────────────────────────────────
 if(WITH_CUDA)
-    target_compile_definitions(SGTDetector PRIVATE SGT_WITH_CUDA)
+    target_compile_definitions(XunChaWeiJian PRIVATE XCWJ_WITH_CUDA)
     message(STATUS "CUDA EP support enabled (runtime GPU selection)")
 endif()
 if(WITH_DIRECTML)
-    target_compile_definitions(SGTDetector PRIVATE SGT_WITH_DIRECTML)
+    target_compile_definitions(XunChaWeiJian PRIVATE XCWJ_WITH_DIRECTML)
     message(STATUS "DirectML EP support enabled (runtime GPU selection)")
 endif()
 if(WITH_FREETYPE)
-    target_compile_definitions(SGTDetector PRIVATE SGT_WITH_FREETYPE)
-    target_link_libraries(SGTDetector PRIVATE Freetype::Freetype)
+    target_compile_definitions(XunChaWeiJian PRIVATE XCWJ_WITH_FREETYPE)
+    target_link_libraries(XunChaWeiJian PRIVATE Freetype::Freetype)
 endif()
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -276,7 +298,7 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release CACHE STRING "" FORCE)
 endif()
 
-target_compile_options(SGTDetector PRIVATE
+target_compile_options(XunChaWeiJian PRIVATE
     $<$<CONFIG:Release>:-O2>
     $<$<CONFIG:Debug>:-g -O0>
 )
@@ -285,26 +307,26 @@ target_compile_options(SGTDetector PRIVATE
 # Copy runtime assets next to the executable after build
 # ─────────────────────────────────────────────────────────────────────────────
 # Copy runtime ONNX models next to the executable.
-foreach(_model IN LISTS SGT_RUNTIME_MODELS)
-    add_custom_command(TARGET SGTDetector POST_BUILD
+foreach(_model IN LISTS XCWJ_RUNTIME_MODELS)
+    add_custom_command(TARGET XunChaWeiJian POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             "${CMAKE_SOURCE_DIR}/assets/models/${_model}"
-            "$<TARGET_FILE_DIR:SGTDetector>/${_model}"
+            "$<TARGET_FILE_DIR:XunChaWeiJian>/${_model}"
         COMMENT "Copying ${_model}...")
 endforeach()
-message(STATUS "Runtime models: ${SGT_RUNTIME_MODELS}")
+message(STATUS "Runtime models: ${XCWJ_RUNTIME_MODELS}")
 
-add_custom_command(TARGET SGTDetector POST_BUILD
+add_custom_command(TARGET XunChaWeiJian POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_SOURCE_DIR}/assets/labels.dict"
-        "$<TARGET_FILE_DIR:SGTDetector>/labels.dict"
+        "$<TARGET_FILE_DIR:XunChaWeiJian>/labels.dict"
     COMMENT "Copying labels.dict...")
 
 # Copy ONNX Runtime core DLL (required at runtime on Windows)
-add_custom_command(TARGET SGTDetector POST_BUILD
+add_custom_command(TARGET XunChaWeiJian POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${ORT_LIB_DIR}/onnxruntime.dll"
-        "$<TARGET_FILE_DIR:SGTDetector>/onnxruntime.dll"
+        "$<TARGET_FILE_DIR:XunChaWeiJian>/onnxruntime.dll"
     COMMENT "Copying onnxruntime.dll...")
 
 # Copy every provider DLL from the selected ORT package (CPU/CUDA/TensorRT...).
@@ -315,10 +337,10 @@ if(NOT ORT_PROVIDER_DLLS)
 endif()
 foreach(_provider_dll IN LISTS ORT_PROVIDER_DLLS)
     get_filename_component(_provider_name "${_provider_dll}" NAME)
-    add_custom_command(TARGET SGTDetector POST_BUILD
+    add_custom_command(TARGET XunChaWeiJian POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             "${_provider_dll}"
-            "$<TARGET_FILE_DIR:SGTDetector>/${_provider_name}"
+            "$<TARGET_FILE_DIR:XunChaWeiJian>/${_provider_name}"
         COMMENT "Copying ${_provider_name}...")
 endforeach()
 
@@ -395,10 +417,10 @@ ldd "$EXE" | while IFS= read -r line; do
 done
 ]=])
 
-add_custom_command(TARGET SGTDetector POST_BUILD
+add_custom_command(TARGET XunChaWeiJian POST_BUILD
     COMMAND "${BASH_EXECUTABLE}" "${CMAKE_BINARY_DIR}/deploy_runtime_dlls.sh"
-        "$<TARGET_FILE:SGTDetector>"
-        "$<TARGET_FILE_DIR:SGTDetector>"
+        "$<TARGET_FILE:XunChaWeiJian>"
+        "$<TARGET_FILE_DIR:XunChaWeiJian>"
     COMMENT "Auto-deploying runtime DLLs via ldd...")
 
 # --- Qt6 plugins (runtime-loaded; invisible to ldd) -------------------------
@@ -413,15 +435,15 @@ if(NOT WINDEPLOYQT6_EXECUTABLE)
     find_program(WINDEPLOYQT6_EXECUTABLE NAMES windeployqt6 windeployqt6.exe)
 endif()
 
-if(SGT_RUN_WINDEPLOYQT AND WINDEPLOYQT6_EXECUTABLE)
+if(XCWJ_RUN_WINDEPLOYQT AND WINDEPLOYQT6_EXECUTABLE)
     message(STATUS "windeployqt6 found: ${WINDEPLOYQT6_EXECUTABLE}")
-    add_custom_command(TARGET SGTDetector POST_BUILD
+    add_custom_command(TARGET XunChaWeiJian POST_BUILD
         COMMAND "${WINDEPLOYQT6_EXECUTABLE}"
             --no-translations
             --no-compiler-runtime
             $<$<CONFIG:Debug>:--debug>
             $<$<CONFIG:Release>:--release>
-            "$<TARGET_FILE:SGTDetector>"
+            "$<TARGET_FILE:XunChaWeiJian>"
         COMMENT "Deploying Qt6 plugins via windeployqt6...")
 else()
     message(STATUS "windeployqt6 disabled or not found; falling back to manual Qt6 platform plugin copy")
@@ -443,32 +465,32 @@ endif()
     set(QT6_PLATFORMS "${_MINGW_PREFIX}/share/qt6/plugins/platforms")
     set(QT6_IMAGEFORMATS "${_MINGW_PREFIX}/share/qt6/plugins/imageformats")
     set(QT6_STYLES "${_MINGW_PREFIX}/share/qt6/plugins/styles")
-    add_custom_command(TARGET SGTDetector POST_BUILD
+    add_custom_command(TARGET XunChaWeiJian POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory
-            "$<TARGET_FILE_DIR:SGTDetector>/platforms"
+            "$<TARGET_FILE_DIR:XunChaWeiJian>/platforms"
         COMMAND ${CMAKE_COMMAND}
             "-DSRC=${QT6_PLATFORMS}/qwindows.dll"
-            "-DDST=$<TARGET_FILE_DIR:SGTDetector>/platforms/qwindows.dll"
+            "-DDST=$<TARGET_FILE_DIR:XunChaWeiJian>/platforms/qwindows.dll"
             -P "${CMAKE_BINARY_DIR}/copy_if_exists.cmake"
         COMMENT "Copying Qt6 platform plugin (if available)...")
-    add_custom_command(TARGET SGTDetector POST_BUILD
+    add_custom_command(TARGET XunChaWeiJian POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory
-            "$<TARGET_FILE_DIR:SGTDetector>/imageformats"
+            "$<TARGET_FILE_DIR:XunChaWeiJian>/imageformats"
         COMMAND ${CMAKE_COMMAND} -E make_directory
-            "$<TARGET_FILE_DIR:SGTDetector>/styles"
+            "$<TARGET_FILE_DIR:XunChaWeiJian>/styles"
         COMMENT "Preparing Qt6 plugin directories...")
     foreach(_qt_image_plugin qjpeg.dll qico.dll qgif.dll qsvg.dll)
-        add_custom_command(TARGET SGTDetector POST_BUILD
+        add_custom_command(TARGET XunChaWeiJian POST_BUILD
             COMMAND ${CMAKE_COMMAND}
                 "-DSRC=${QT6_IMAGEFORMATS}/${_qt_image_plugin}"
-                "-DDST=$<TARGET_FILE_DIR:SGTDetector>/imageformats/${_qt_image_plugin}"
+                "-DDST=$<TARGET_FILE_DIR:XunChaWeiJian>/imageformats/${_qt_image_plugin}"
                 -P "${CMAKE_BINARY_DIR}/copy_if_exists.cmake"
             COMMENT "Copying Qt6 image plugin ${_qt_image_plugin} (if available)...")
     endforeach()
-    add_custom_command(TARGET SGTDetector POST_BUILD
+    add_custom_command(TARGET XunChaWeiJian POST_BUILD
         COMMAND ${CMAKE_COMMAND}
             "-DSRC=${QT6_STYLES}/qmodernwindowsstyle.dll"
-            "-DDST=$<TARGET_FILE_DIR:SGTDetector>/styles/qmodernwindowsstyle.dll"
+            "-DDST=$<TARGET_FILE_DIR:XunChaWeiJian>/styles/qmodernwindowsstyle.dll"
             -P "${CMAKE_BINARY_DIR}/copy_if_exists.cmake"
         COMMENT "Copying Qt6 style plugin (if available)...")
 endif()

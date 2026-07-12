@@ -8,8 +8,8 @@ int main(int argc, char* argv[])
 {
     QCoreApplication app(argc, argv);
 
-    const auto dark = sgt::ui::Theme::dark();
-    const auto light = sgt::ui::Theme::light();
+    const auto dark = xcwj::ui::Theme::dark();
+    const auto light = xcwj::ui::Theme::light();
 
     if (dark.name != "dark" || light.name != "light") {
         std::cerr << "name mismatch\n";
@@ -20,8 +20,8 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    const QString darkQss = sgt::ui::Theme::renderQss(dark);
-    const QString lightQss = sgt::ui::Theme::renderQss(light);
+    const QString darkQss = xcwj::ui::Theme::renderQss(dark);
+    const QString lightQss = xcwj::ui::Theme::renderQss(light);
 
     if (darkQss.isEmpty() || lightQss.isEmpty()) {
         std::cerr << "qss empty (resource not registered?)\n";

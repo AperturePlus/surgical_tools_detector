@@ -8,7 +8,7 @@
 #include "core/DetectionMetadata.h"
 #include "core/DefectResult.h"
 
-namespace sgt {
+namespace xcwj {
 
 struct ExportMetadata {
     int                 schemaVersion = 1;
@@ -45,4 +45,4 @@ ExportData exportFrame(const cv::Mat& rawFrame,
 /// Save frame as JPEG and stats as JSON to outputDir. Returns true on success.
 bool saveExport(const ExportData& data, const std::string& outputDir);
 
-} // namespace sgt
+} // namespace xcwj

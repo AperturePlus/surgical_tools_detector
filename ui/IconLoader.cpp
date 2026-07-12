@@ -10,7 +10,7 @@
 #include <QRectF>
 #include <QScreen>
 
-namespace sgt::ui {
+namespace xcwj::ui {
 
 namespace {
 
@@ -167,4 +167,4 @@ QIcon IconLoader::load(const QString& alias, const QString& strokeColor, QSize s
     return icon;
 }
 
-} // namespace sgt::ui
+} // namespace xcwj::ui

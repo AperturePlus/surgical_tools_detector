@@ -9,7 +9,7 @@ class QLabel;
 class QEnterEvent;
 class QMouseEvent;
 
-namespace sgt::ui {
+namespace xcwj::ui {
 
 class ThumbCard final : public QFrame {
     Q_OBJECT
@@ -36,4 +36,4 @@ private:
     QString displayTime() const;
 };
 
-} // namespace sgt::ui
+} // namespace xcwj::ui

@@ -6,7 +6,7 @@
 
 class QPushButton;
 
-namespace sgt::ui {
+namespace xcwj::ui {
 
 class ModePillBar final : public QFrame {
     Q_OBJECT
@@ -30,4 +30,4 @@ private:
     void syncButtons();
 };
 
-} // namespace sgt::ui
+} // namespace xcwj::ui

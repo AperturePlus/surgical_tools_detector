@@ -11,7 +11,7 @@
 
 #include <opencv2/imgproc.hpp>
 
-namespace sgt {
+namespace xcwj {
 
 namespace {
 
@@ -114,10 +114,10 @@ OnnxDefectClassifier::OnnxDefectClassifier(const std::string& modelPath,
     };
     std::vector<EpCandidate> candidates;
 
-#ifdef SGT_WITH_CUDA
+#ifdef XCWJ_WITH_CUDA
     candidates.push_back({"CUDA", {"CUDAExecutionProvider", "CUDA"}});
 #endif
-#ifdef SGT_WITH_DIRECTML
+#ifdef XCWJ_WITH_DIRECTML
 #ifdef _WIN32
     candidates.push_back({"DirectML", {"DmlExecutionProvider", "DMLExecutionProvider", "DML"}});
 #endif
@@ -294,4 +294,4 @@ OnnxDefectClassifier::classify(const cv::Mat&                frame,
     return results;
 }
 
-} // namespace sgt
+} // namespace xcwj

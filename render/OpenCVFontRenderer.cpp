@@ -21,7 +21,7 @@ std::wstring utf8ToWide(const std::string& text)
 } // namespace
 #endif
 
-namespace sgt {
+namespace xcwj {
 
 void OpenCVFontRenderer::putText(cv::Mat&           img,
                                  const std::string& text,
@@ -203,4 +203,4 @@ cv::Size OpenCVFontRenderer::getTextSize(const std::string& text,
 #endif
 }
 
-} // namespace sgt
+} // namespace xcwj

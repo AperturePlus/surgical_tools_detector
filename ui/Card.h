@@ -4,7 +4,7 @@
 
 class QVBoxLayout;
 
-namespace sgt::ui {
+namespace xcwj::ui {
 
 class Card final : public QFrame {
     Q_OBJECT
@@ -18,4 +18,4 @@ private:
     QVBoxLayout* bodyLayout_ = nullptr;
 };
 
-} // namespace sgt::ui
+} // namespace xcwj::ui

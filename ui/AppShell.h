@@ -15,12 +15,12 @@
 
 class QStackedWidget;
 
-namespace sgt {
+namespace xcwj {
 class CaptureStore;
 class DetectionEngine;
 }
 
-namespace sgt::ui {
+namespace xcwj::ui {
 
 struct AppOptions {
     int cameraId = 0;
@@ -77,4 +77,4 @@ private:
     void captureCurrent();
 };
 
-} // namespace sgt::ui
+} // namespace xcwj::ui

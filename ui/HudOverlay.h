@@ -4,11 +4,11 @@
 
 #include <QWidget>
 
-namespace sgt {
+namespace xcwj {
 struct DetectionFrameResult;
 }
 
-namespace sgt::ui {
+namespace xcwj::ui {
 
 class CaptureFAB;
 class ModePillBar;
@@ -36,4 +36,4 @@ private:
     CaptureFAB* captureButton_ = nullptr;
 };
 
-} // namespace sgt::ui
+} // namespace xcwj::ui

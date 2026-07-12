@@ -1,8 +1,10 @@
 #include "core/AppSettings.h"
 
+#include <utility>
+
 #include "core/Renderer.h"
 
-namespace sgt {
+namespace xcwj {
 
 namespace {
 
@@ -12,17 +14,53 @@ constexpr const char* kModeMask       = "defaults/modeMask";
 constexpr const char* kThresholdTool  = "defaults/threshold/tool";
 constexpr const char* kThresholdGrasp = "defaults/threshold/grasp";
 constexpr const char* kThresholdDef   = "defaults/threshold/defect";
+constexpr const char* kThemeMode      = "ui/theme";
 
 } // namespace
 
 AppSettings::AppSettings()
-    : settings_(std::make_unique<QSettings>(QStringLiteral("SGT"),
-                                            QStringLiteral("Detector")))
-{}
+    : settings_(std::make_unique<QSettings>(QStringLiteral("XunChaWeiJian"),
+                                            QStringLiteral("XunChaWeiJian")))
+    , legacySettings_(std::make_unique<QSettings>(QStringLiteral("SGT"),
+                                                  QStringLiteral("Detector")))
+{
+    migrateLegacySettings();
+}
 
 AppSettings::AppSettings(QSettings::Format format, const QString& path)
     : settings_(std::make_unique<QSettings>(path, format))
 {}
+
+AppSettings::AppSettings(std::unique_ptr<QSettings> settings,
+                         std::unique_ptr<QSettings> legacySettings)
+    : settings_(std::move(settings))
+    , legacySettings_(std::move(legacySettings))
+{
+    migrateLegacySettings();
+}
+
+void AppSettings::migrateLegacySettings()
+{
+    if (!legacySettings_) return;
+
+    const char* const keys[] = {
+        kCameraId,
+        kCaptureDir,
+        kModeMask,
+        kThresholdTool,
+        kThresholdGrasp,
+        kThresholdDef,
+        kThemeMode
+    };
+
+    bool migrated = false;
+    for (const char* key : keys) {
+        if (settings_->contains(key) || !legacySettings_->contains(key)) continue;
+        settings_->setValue(key, legacySettings_->value(key));
+        migrated = true;
+    }
+    if (migrated) settings_->sync();
+}
 
 int AppSettings::cameraId() const
 {
@@ -81,6 +119,16 @@ void AppSettings::setCaptureDir(const QString& dir)
     }
 }
 
+QString AppSettings::themeMode() const
+{
+    return settings_->value(kThemeMode, QStringLiteral("dark")).toString();
+}
+
+void AppSettings::setThemeMode(const QString& mode)
+{
+    settings_->setValue(kThemeMode, mode);
+}
+
 void AppSettings::resetDefaults()
 {
     settings_->remove(kModeMask);
@@ -89,4 +137,4 @@ void AppSettings::resetDefaults()
     settings_->remove(kThresholdDef);
 }
 
-} // namespace sgt
+} // namespace xcwj

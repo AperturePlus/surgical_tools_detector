@@ -20,7 +20,7 @@
 #include "ui/GalleryFilterBar.h"
 #include "ui/ThumbCard.h"
 
-namespace sgt::ui {
+namespace xcwj::ui {
 
 GalleryPage::GalleryPage(QWidget* parent)
     : QWidget(parent)
@@ -190,4 +190,4 @@ QString GalleryPage::dateHeading(const QString& timestamp) const
     return timestamp.isEmpty() ? "Unknown date" : timestamp.left(10);
 }
 
-} // namespace sgt::ui
+} // namespace xcwj::ui

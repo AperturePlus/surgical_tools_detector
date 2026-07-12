@@ -2,7 +2,7 @@
 
 #include <string>
 
-namespace sgt {
+namespace xcwj {
 
 /// Abstract interface for mapping class IDs to human-readable display labels.
 /// Implementations may load from files, databases, or remote services.
@@ -18,4 +18,4 @@ public:
     virtual int numClasses() const = 0;
 };
 
-} // namespace sgt
+} // namespace xcwj

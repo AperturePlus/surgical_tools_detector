@@ -10,7 +10,7 @@
 #include "core/DefectResult.h"
 #include "core/Renderer.h"
 
-namespace sgt {
+namespace xcwj {
 
 class DetectorBackend;
 class LabelProvider;
@@ -43,4 +43,4 @@ private:
     std::string toolPath_, graspPath_, defectPath_, dictPath_;
 };
 
-} // namespace sgt
+} // namespace xcwj

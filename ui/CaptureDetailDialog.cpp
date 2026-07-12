@@ -21,7 +21,7 @@
 #include "ui/QtImageUtils.h"
 #include "ui/ThumbnailCache.h"
 
-namespace sgt::ui {
+namespace xcwj::ui {
 
 namespace {
 
@@ -203,4 +203,4 @@ void CaptureDetailDialog::navigate(int delta)
     showRecord(std::clamp(currentIndex_ + delta, 0, static_cast<int>(records_.size()) - 1));
 }
 
-} // namespace sgt::ui
+} // namespace xcwj::ui

@@ -3,7 +3,7 @@
 #include <fstream>
 #include <iostream>
 
-namespace sgt {
+namespace xcwj {
 
 DictLabelProvider::DictLabelProvider(const std::string&              dictPath,
                                      const std::vector<std::string>& classNames)
@@ -63,4 +63,4 @@ std::string DictLabelProvider::getLabel(int classId) const
     return raw; // graceful fallback to pinyin
 }
 
-} // namespace sgt
+} // namespace xcwj
