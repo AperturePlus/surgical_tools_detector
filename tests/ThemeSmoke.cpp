@@ -39,5 +39,25 @@ int main(int argc, char* argv[])
         std::cerr << "light accent token missing in rendered qss\n";
         return 1;
     }
+
+    // New tokens must exist and be substituted (no leftover {{...}}).
+    const QStringList newTokens = {
+        dark.chipBg, dark.chipBorder, dark.focusRing, dark.scrollBar, dark.scrollBarHover,
+        light.chipBg, light.chipBorder, light.focusRing, light.scrollBar, light.scrollBarHover,
+    };
+    for (const QString& tok : newTokens) {
+        if (tok.isEmpty()) {
+            std::cerr << "a new token is empty\n";
+            return 1;
+        }
+    }
+    if (!darkQss.contains(dark.chipBg)) {
+        std::cerr << "dark chipBg not substituted into qss\n";
+        return 1;
+    }
+    if (!lightQss.contains(light.chipBg)) {
+        std::cerr << "light chipBg not substituted into qss\n";
+        return 1;
+    }
     return 0;
 }

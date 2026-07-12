@@ -18,6 +18,11 @@ struct ThemeTokens {
     QString warn;
     QString danger;
     QString shadow;
+    QString chipBg;
+    QString chipBorder;
+    QString focusRing;
+    QString scrollBar;
+    QString scrollBarHover;
 };
 
 namespace Theme {

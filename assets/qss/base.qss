@@ -49,7 +49,7 @@ QWidget#HudOverlay { background: transparent; }
 QFrame#ModePillBar { background: transparent; }
 
 QFrame#StatusChip {
-    background: rgba(14,20,27,0.72);
+    background: {{chipBg}};
     color: {{textPrimary}};
     border: 1px solid {{border}};
     border-radius: 14px;
@@ -63,7 +63,7 @@ QFrame#StatusChipDot {
 }
 
 QPushButton#ModePill {
-    background: rgba(14,20,27,0.72);
+    background: {{chipBg}};
     color: {{textSecondary}};
     border: 1px solid {{border}};
     border-radius: 14px;
