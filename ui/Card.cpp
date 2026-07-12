@@ -6,9 +6,17 @@
 namespace xcwj::ui {
 
 Card::Card(const QString& title, QWidget* parent)
+    : Card(title, Variant::Standard, parent) {}
+
+Card::Card(const QString& title, Variant variant, QWidget* parent)
     : QFrame(parent)
 {
-    setObjectName("Card");
+    init(title, variant);
+}
+
+void Card::init(const QString& title, Variant variant)
+{
+    setObjectName(variant == Variant::Flat ? "CardFlat" : "Card");
     auto* layout = new QVBoxLayout(this);
     layout->setContentsMargins(14, 12, 14, 14);
     layout->setSpacing(10);

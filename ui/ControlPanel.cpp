@@ -88,7 +88,7 @@ ControlPanel::ControlPanel(uint8_t initialModeMask,
     dataCard->bodyLayout()->addWidget(resultTable_);
     layout->addWidget(dataCard, 1);
 
-    auto* modelsCard = new Card("Models");
+    auto* modelsCard = new Card("Models", Card::Variant::Flat);
     toolModelLabel_ = new QLabel("Tool: Not configured");
     graspModelLabel_ = new QLabel("Grasp: Not configured");
     defectModelLabel_ = new QLabel("Defect: Not configured");
